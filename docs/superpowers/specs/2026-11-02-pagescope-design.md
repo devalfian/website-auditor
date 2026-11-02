@@ -635,3 +635,29 @@ v1 dinyatakan selesai hanya bila **seluruh** poin berikut terbukti lewat eksekus
 | 7 | Seksi 3 — CLI, reporters, GitHub Action | Disetujui |
 | 8 | Seksi 4 — rules, security, testing, CI | Disetujui |
 | 9 | Nama package (bentrok dengan `sitescope` yang sudah ada di npm) | Ganti nama produk menjadi **PageScope**: package `pagescope` + `@pagescope/core`, bin `pagescope` |
+
+---
+
+## 19. Amendemen Selama Implementasi
+
+Perubahan terhadap spec yang ditemukan saat eksekusi, dicatat agar dokumen ini tetap jujur tentang keadaan sebenarnya.
+
+### 19.1 Celah bypass pada guard connect-time (ditemukan saat Task 5)
+
+Spec §8.2 menyatakan bahwa validasi di dalam `lookup` cukup untuk menegakkan batas jaringan. Itu **tidak lengkap**: Node melewati DNS — dan karenanya melewati `lookup` — ketika host sudah berupa IP literal. Akibatnya `http://169.254.169.254/` dapat menembus guard tanpa pernah memicu validasi.
+
+Perbaikan: `fetchPage` menjalankan `checkLiteralAddress()` pada URL awal **dan** pada setiap hop redirect, memakai `isBlockedAddress()` yang sama. Guard connect-time tetap dipertahankan untuk host berbasis nama (tempat DNS rebinding mungkin terjadi). Keduanya diperlukan; salah satu saja tidak cukup.
+
+Dibuktikan oleh test: `blocks a loopback IP literal when the guard is fully enabled`, `blocks the cloud metadata IP literal`, `blocks a redirect that points at a private address`.
+
+### 19.2 `undici` `connect.lookup` terbukti berfungsi
+
+Probe empiris (dijalankan pada 2026-11-02) menghasilkan `INTERCEPTED: EBLOCKEDADDRESS`, sehingga risiko §16 #1 ditutup dan fallback `node:https` tidak diperlukan.
+
+### 19.3 `parse5` tidak mengekspor `Document`
+
+Tipe yang benar adalah `DefaultTreeAdapterMap['document']`. Diverifikasi langsung dari `parse5/dist/index.d.ts`. Ini menutup risiko §16 #3 (node implisit memang tidak punya `sourceCodeLocation`, dibuktikan test) dan §16 #4 (`startOffset`/`endOffset` tersedia untuk snippet presisi).
+
+### 19.4 `NETWORK_ERROR` ditambahkan ke `AuditErrorCode`
+
+Kegagalan transport umum (`ECONNREFUSED`, `ECONNRESET`) tidak dapat dipetakan secara jujur ke `DNS_FAILURE`, sehingga satu kode ditambahkan ke enum. `TimeoutError`/kode `23` dipetakan ke `FETCH_TIMEOUT` berdasarkan nilai yang benar-benar diamati, bukan asumsi.
