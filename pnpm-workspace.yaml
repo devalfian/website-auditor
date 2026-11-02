@@ -1,0 +1,9 @@
+packages:
+  - packages/*
+# esbuild's install script links its native binary; tsup cannot build without it.
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@vitest/mocker@5.1.0'
+  - '@vitest/spy@5.1.0'
+  - vitest@5.1.0

@@ -1,0 +1,21 @@
+{
+  "name": "pagescope",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "pagescope": "./dist/cli.js"
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pagescope/core": "workspace:*",
+    "commander": "15.0.0"
+  }
+}
