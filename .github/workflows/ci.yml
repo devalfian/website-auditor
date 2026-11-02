@@ -27,5 +27,7 @@ jobs:
       - run: pnpm format:check
       - run: pnpm build
       - run: pnpm test
-      - run: npm pack --dry-run --workspace @pagescope/core
-      - run: npm pack --dry-run --workspace pagescope
+      # `npm pack --workspace` does not work here: these are pnpm workspaces, and npm
+      # reports "No workspaces found". Packing by path verifies the same thing.
+      - run: npm pack --dry-run ./packages/core
+      - run: npm pack --dry-run ./packages/cli
