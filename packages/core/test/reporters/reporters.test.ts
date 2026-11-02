@@ -49,6 +49,7 @@ const result: AuditResult = {
       ],
       recommendation: 'Escape untrusted content.',
       docsUrl: 'https://example.com/docs/rules/seo-title.md',
+      fingerprint: '0123456789abcdef',
     },
     {
       ruleId: 'a11y/html-lang',
@@ -62,6 +63,7 @@ const result: AuditResult = {
       evidence: [{ kind: 'absence', expected: 'lang attribute', scope: 'checked <html>' }],
       recommendation: 'Confirm the language.',
       docsUrl: 'https://example.com/docs/rules/a11y-html-lang.md',
+      fingerprint: '0123456789abcdef',
     },
   ],
   errors: [{ code: 'RULE_CRASH', message: 'boom', ruleId: 'security/https' }],

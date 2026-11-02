@@ -36,8 +36,17 @@ export function renderSummary(result: AuditResult): string {
   const lines = [
     `PageScope — ${sanitizeForTerminal(result.target.requestedUrl)}`,
     `status: ${result.status} | findings: ${result.findings.length} | ${result.audit.durationMs}ms`,
-    '',
   ]
+
+  if (result.baseline) {
+    lines.push(
+      `baseline: ${result.baseline.newFindings} new, ${result.baseline.knownFindings} known, ${result.baseline.staleEntries} stale entr${
+        result.baseline.staleEntries === 1 ? 'y' : 'ies'
+      }`,
+    )
+  }
+
+  lines.push('')
 
   for (const rule of result.rules) {
     const glyph = STATUS_GLYPH[rule.status] ?? '[?]   '

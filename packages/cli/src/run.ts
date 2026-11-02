@@ -1,14 +1,18 @@
+import { readFile } from 'node:fs/promises'
 import { Command, CommanderError } from 'commander'
 import {
+  BaselineError,
   UnknownRuleError,
   VERSION,
   audit,
+  createBaseline,
+  parseBaseline,
   toHtmlReport,
   toJsonReport,
   toMarkdownReport,
   validateTarget,
 } from '@pagescope/core'
-import type { AuditResult } from '@pagescope/core'
+import type { AuditResult, BaselineFile } from '@pagescope/core'
 import { ConfigError, loadConfig } from './config.js'
 import { consoleSink, renderSummary, writeReportFile, type OutputSink } from './output.js'
 
@@ -50,6 +54,8 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
     .option('--rules <ids>', 'comma separated rule ids to run')
     .option('--exclude-rules <ids>', 'comma separated rule ids to skip')
     .option('--config <path>', 'path to a pagescope.config.json file')
+    .option('--baseline <path>', 'mark findings against a recorded baseline file')
+    .option('--write-baseline <path>', 'record this run as a baseline and exit 0')
     .option('--timeout <ms>', 'request timeout in milliseconds', '10000')
     .option('--verbose', 'print extra diagnostics to stderr', false)
     .option('--no-color', 'disable colour in terminal output')
@@ -75,6 +81,8 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
     rules?: string
     excludeRules?: string
     config?: string
+    baseline?: string
+    writeBaseline?: string
     timeout: string
   }>()
 
@@ -114,6 +122,25 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
     return EXIT.USAGE
   }
 
+  if (options.baseline && options.writeBaseline) {
+    out.error('--baseline and --write-baseline cannot be used together\n')
+    return EXIT.USAGE
+  }
+
+  let baseline: BaselineFile | undefined
+  if (options.baseline) {
+    try {
+      baseline = parseBaseline(JSON.parse(await readFile(options.baseline, 'utf8')))
+    } catch (error) {
+      const reason =
+        error instanceof BaselineError
+          ? error.message
+          : `cannot read ${options.baseline}: ${error instanceof Error ? error.message : String(error)}`
+      out.error(`${reason}\n`)
+      return EXIT.USAGE
+    }
+  }
+
   let result: AuditResult
   try {
     result = await auditFn({
@@ -121,6 +148,7 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
       timeoutMs,
       ...(rules ? { rules } : {}),
       ...(excludeRules ? { excludeRules } : {}),
+      ...(baseline ? { baseline } : {}),
     })
   } catch (error) {
     if (error instanceof UnknownRuleError) {
@@ -141,6 +169,19 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
 
   if (result.status === 'partial') {
     out.error('Warning: partial audit — some rules did not run. See the report for details.\n')
+  }
+
+  if (options.writeBaseline) {
+    await writeReportFile(
+      options.writeBaseline,
+      `${JSON.stringify(createBaseline(result), null, 2)}\n`,
+    )
+    out.error(
+      `Wrote baseline ${options.writeBaseline} with ${result.findings.length} entr${
+        result.findings.length === 1 ? 'y' : 'ies'
+      }. Policy is not evaluated when a baseline is being recorded.\n`,
+    )
+    return EXIT.OK
   }
 
   if (format === 'summary') {
@@ -172,9 +213,13 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
     )
   }
 
+  const policyFindings = result.baseline
+    ? result.findings.filter((finding) => finding.baseline === 'new')
+    : result.findings
+
   const policyFailed =
     failOn !== 'none' &&
-    result.findings.some((finding) => SEVERITY_RANK[finding.severity] >= SEVERITY_RANK[failOn])
+    policyFindings.some((finding) => SEVERITY_RANK[finding.severity] >= SEVERITY_RANK[failOn])
 
   return policyFailed ? EXIT.POLICY : EXIT.OK
 }

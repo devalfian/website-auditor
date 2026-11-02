@@ -10,3 +10,13 @@ export { escapeHtml, sanitizeForTerminal } from './reporters/escape.js'
 export { toJsonReport } from './reporters/json.js'
 export { toMarkdownReport } from './reporters/markdown.js'
 export { toHtmlReport } from './reporters/html.js'
+export {
+  applyBaseline,
+  createBaseline,
+  parseBaseline,
+  BaselineError,
+  BASELINE_FORMAT_VERSION,
+  type BaselineEntry,
+  type BaselineFile,
+} from './engine/baseline.js'
+export { fingerprintOf } from './engine/fingerprint.js'

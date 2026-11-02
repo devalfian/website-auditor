@@ -40,6 +40,7 @@ export const duplicateIdRule: RuleDefinition = {
         severity: 'medium',
         confidence: 'high',
         title: `Duplicate id "${id}"`,
+        fingerprint: id,
         description: `The id "${id}" is used by ${elements.length} elements. Duplicate ids break fragment links and document.getElementById lookups.`,
         evidence: elements.map((el) => elementEvidence(snapshot, el)),
         recommendation: 'Give every element a unique id, or use a class when grouping is intended.',

@@ -71,6 +71,28 @@ All three reporters consume the same `AuditResult`. None of them recalculates fi
 - **Markdown** — grouped by severity, snippets fenced
 - **HTML** — a single self-contained file, no JavaScript, restrictive CSP meta, every dynamic value escaped
 
+## Baseline mode
+
+A gate that fails on findings you already know about gets switched off. Baseline mode records the current findings and lets the gate ignore them, so only regressions fail.
+
+### Identity is semantic, not positional
+
+The obvious fingerprint — rule id plus line and column — is wrong. Adding a paragraph above a finding moves its line, so the baseline would "forget" it and the gate would fail on an unchanged page. That failure mode is what makes people disable a quality gate.
+
+Instead each rule may supply a **discriminator**: the duplicated `id` value, the image `src`, a heading-level pair. The engine hashes `ruleId + discriminator` (sha256, first 16 hex chars) in `engine/fingerprint.ts`. A rule that can produce at most one finding per page supplies nothing.
+
+The consequence is tested directly: `packages/core/test/engine/baseline.test.ts` asserts that shifting a finding's line leaves its fingerprint unchanged.
+
+### What a baseline does and does not do
+
+- It marks findings `known` or `new`. It never removes them: hiding a known finding would make the report lie.
+- `--fail-on` applies only to `new` findings when a baseline is active.
+- `--write-baseline` records state and exits `0` without evaluating the policy.
+- Entries that no longer appear are counted as `stale`, so a drifted baseline is visible rather than silently ignored.
+- Baseline files are user-supplied input and are validated with zod before use (`parseBaseline`).
+
+Schema note: adding `fingerprint` and the optional `baseline` fields moved `SCHEMA_VERSION` to `1.1.0`. The change is additive; reports from `1.0.0` remain readable by humans but will not validate against the `1.1.0` schema.
+
 ## Exit codes
 
 | Code | Meaning                        |

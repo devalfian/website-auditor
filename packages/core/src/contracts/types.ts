@@ -61,6 +61,13 @@ export interface FindingDraft {
   recommendation: string
   location?: { line: number; column: number }
   patch?: Patch
+  /**
+   * Stable identity of this specific occurrence within the rule, e.g. the duplicated
+   * id value or the image src. Deliberately NOT a line number: positions shift when
+   * unrelated content above them changes, which would make baselines forget findings.
+   * Omit it when a rule can produce at most one finding per page.
+   */
+  fingerprint?: string
 }
 
 export interface RuleResult {
@@ -97,6 +104,10 @@ export interface Finding extends FindingDraft {
   status: FindingStatus
   target: { url: string }
   docsUrl: string
+  /** Computed by the engine: hash of rule id plus the rule's discriminator. */
+  fingerprint: string
+  /** Set only when a baseline was applied. Absent means no baseline was in use. */
+  baseline?: 'new' | 'known'
 }
 
 export interface RuleExecutionSummary {
@@ -122,4 +133,11 @@ export interface AuditResult {
   errors: AuditError[]
   environment: { pagescopeVersion: string; node: string }
   limitations: string[]
+  /** Present only when a baseline file was applied to this audit. */
+  baseline?: {
+    newFindings: number
+    knownFindings: number
+    /** Baseline entries whose fingerprint no longer appears on the page. */
+    staleEntries: number
+  }
 }

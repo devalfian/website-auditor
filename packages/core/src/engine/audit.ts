@@ -1,6 +1,8 @@
 import { fetchPage, type FetchOutcome } from '../collection/fetch.js'
 import { SCHEMA_VERSION } from '../contracts/report-schema.js'
 import { VERSION } from '../version.js'
+import { applyBaseline, type BaselineFile } from './baseline.js'
+import { fingerprintOf } from './fingerprint.js'
 import { selectRules } from './registry.js'
 import type {
   AuditError,
@@ -32,6 +34,8 @@ export interface AuditRequest {
   fetcher?: typeof fetchPage
   /** Internal only: replaces the clock in tests. */
   now?: () => Date
+  /** Marks findings as known or new against a previously recorded baseline. */
+  baseline?: BaselineFile
 }
 
 function docsUrlFor(slug: string): string {
@@ -116,6 +120,7 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
         status: result.status as FindingStatus,
         target: { url: snapshot.finalUrl },
         docsUrl: docsUrlFor(rule.docsSlug),
+        fingerprint: fingerprintOf(rule.id, draft.fingerprint),
       }))
 
       findings.push(...ruleFindings)
@@ -138,7 +143,7 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
 
   const status = summaries.some((summary) => summary.status === 'error') ? 'partial' : 'completed'
 
-  return {
+  const result: AuditResult = {
     schemaVersion: SCHEMA_VERSION,
     audit: finished(),
     target: {
@@ -154,4 +159,6 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
     environment: { pagescopeVersion: VERSION, node: process.versions.node },
     limitations: [...LIMITATIONS],
   }
+
+  return request.baseline ? applyBaseline(result, request.baseline) : result
 }

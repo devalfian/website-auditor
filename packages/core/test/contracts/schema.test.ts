@@ -60,6 +60,7 @@ describe('auditResultSchema', () => {
           ],
           recommendation: 'Add a <title> element inside <head>.',
           docsUrl: 'https://github.com/devalfian/website-auditor/blob/main/docs/rules/seo-title.md',
+          fingerprint: '0123456789abcdef',
         },
       ],
     }

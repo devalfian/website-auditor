@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LIMITATIONS, audit } from '../../src/engine/audit.js'
 import { UnknownRuleError, allRules, selectRules } from '../../src/engine/registry.js'
+import { SCHEMA_VERSION } from '../../src/contracts/report-schema.js'
 import type { FetchOutcome } from '../../src/collection/fetch.js'
 import { page, snapshotOf } from '../rules/helpers.js'
 
@@ -45,7 +46,7 @@ describe('audit', () => {
     const result = await audit({ url: 'https://example.com/', fetcher: okFetcher() })
     expect(result.status).toBe('completed')
     expect(result.rules).toHaveLength(13)
-    expect(result.schemaVersion).toBe('1.0.0')
+    expect(result.schemaVersion).toBe(SCHEMA_VERSION)
     expect(result.limitations).toEqual([...LIMITATIONS])
     expect(result.rules.some((summary) => summary.status === 'failed')).toBe(true)
     expect(result.rules.some((summary) => summary.status === 'passed')).toBe(true)

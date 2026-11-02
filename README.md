@@ -90,6 +90,27 @@ node packages/cli/dist/cli.js https://example.com --format markdown --out report
 node packages/cli/dist/cli.js https://example.com --format all --out reports/audit
 ```
 
+## Baseline mode
+
+A gate that fails on findings you already know about gets switched off within a week. Record the current state once, then fail only on what is new:
+
+```bash
+# record the current findings
+node packages/cli/dist/cli.js https://example.com --write-baseline .pagescope-baseline.json
+
+# later, in CI: only new findings can fail the build
+node packages/cli/dist/cli.js https://example.com --baseline .pagescope-baseline.json --fail-on high
+```
+
+The summary reports `new`, `known` and `stale` counts. Knowingly:
+
+- Findings that are in the baseline still appear in every report, marked `known`. Nothing is hidden.
+- `--fail-on` applies only to `new` findings when a baseline is in use.
+- `--write-baseline` exits `0` without evaluating the policy: recording state is not a verdict.
+- Identity is a hash of the rule id plus a _semantic_ discriminator (a duplicated `id`, an image `src`), never a line number, so unrelated edits above a finding do not make the baseline forget it.
+- Two findings from the same rule that share a discriminator collapse into one identity. Only two rules can produce several findings today, and both supply a discriminator.
+- A baseline recorded for one page is not meaningful for another; `--rules` on a full baseline will report the other rules' entries as `stale`.
+
 ## Library
 
 ```ts
@@ -114,14 +135,14 @@ These are not TODOs — they are deliberate boundaries of v0.1.0:
 
 ## Roadmap
 
-Planned, not started: baseline mode (`--baseline`, fail only on new findings), broken-link checking, a browser adapter for rendered-DOM audits, a web dashboard, and a hosting story with authentication. None of these exist in v0.1.0.
+Planned, not started: broken-link checking, a browser adapter for rendered-DOM audits, a web dashboard, and a hosting story with authentication. None of these exist in v0.1.0.
 
 ## Development
 
 ```bash
 pnpm install
 pnpm typecheck
-pnpm test          # 128 tests, no network access required
+pnpm test          # 145 tests, no network access required
 pnpm lint
 pnpm build
 ```

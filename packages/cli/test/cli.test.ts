@@ -1,10 +1,16 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { SCHEMA_VERSION, type AuditResult } from '@pagescope/core'
+import {
+  SCHEMA_VERSION,
+  applyBaseline,
+  createBaseline,
+  type AuditResult,
+  type BaselineFile,
+} from '@pagescope/core'
 import { EXIT, run } from '../src/run.js'
 
 const execFileAsync = promisify(execFile)
@@ -69,6 +75,7 @@ const highFinding = {
   evidence: [{ kind: 'absence' as const, expected: '<title>', scope: 'scanned <head>' }],
   recommendation: 'add one',
   docsUrl: 'https://example.com/docs/rules/seo-title.md',
+  fingerprint: 'aaaaaaaaaaaaaaaa',
 }
 
 const captured: string[] = []
@@ -156,5 +163,96 @@ describe('run() with an injected audit', () => {
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
+  })
+})
+
+describe('baseline mode', () => {
+  // The injected fake mirrors what audit() does: apply the baseline when one is passed.
+  const baselineAware =
+    (result: AuditResult) =>
+    async (request: { baseline?: BaselineFile }): Promise<AuditResult> =>
+      request.baseline ? applyBaseline(result, request.baseline) : result
+
+  it('passes the gate when every finding is already in the baseline', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'pagescope-'))
+    try {
+      const baselinePath = join(dir, 'baseline.json')
+      await writeFile(
+        baselinePath,
+        JSON.stringify(createBaseline(baseResult({ findings: [highFinding] }))),
+      )
+
+      const code = await run(
+        ['https://example.com/', '--fail-on', 'high', '--baseline', baselinePath],
+        {
+          auditFn: baselineAware(baseResult({ findings: [highFinding] })),
+          out: sink,
+        },
+      )
+      expect(code).toBe(EXIT.OK)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('fails the gate on a finding that is not in the baseline', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'pagescope-'))
+    try {
+      const baselinePath = join(dir, 'baseline.json')
+      await writeFile(baselinePath, JSON.stringify(createBaseline(baseResult())))
+
+      const code = await run(
+        ['https://example.com/', '--fail-on', 'high', '--baseline', baselinePath],
+        { auditFn: baselineAware(baseResult({ findings: [highFinding] })), out: sink },
+      )
+      expect(code).toBe(EXIT.POLICY)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('writes a baseline and exits 0 without evaluating the policy', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'pagescope-'))
+    try {
+      const baselinePath = join(dir, 'baseline.json')
+      const code = await run(
+        ['https://example.com/', '--fail-on', 'high', '--write-baseline', baselinePath],
+        { auditFn: baselineAware(baseResult({ findings: [highFinding] })), out: sink },
+      )
+      expect(code).toBe(EXIT.OK)
+
+      const written = JSON.parse(await readFile(baselinePath, 'utf8')) as BaselineFile
+      expect(written.version).toBe(1)
+      expect(written.entries).toHaveLength(1)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects a malformed baseline file', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'pagescope-'))
+    try {
+      const baselinePath = join(dir, 'baseline.json')
+      await writeFile(baselinePath, JSON.stringify({ version: 99, entries: [] }))
+
+      const code = await run(['https://example.com/', '--baseline', baselinePath], {
+        auditFn: baselineAware(baseResult()),
+        out: sink,
+      })
+      expect(code).toBe(EXIT.USAGE)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('refuses to read and write a baseline in the same run', async () => {
+    const code = await run(
+      ['https://example.com/', '--baseline', 'a.json', '--write-baseline', 'b.json'],
+      {
+        auditFn: baselineAware(baseResult()),
+        out: sink,
+      },
+    )
+    expect(code).toBe(EXIT.USAGE)
   })
 })

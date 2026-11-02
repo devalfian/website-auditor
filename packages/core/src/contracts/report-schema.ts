@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const SCHEMA_VERSION = '1.0.0'
+export const SCHEMA_VERSION = '1.1.0'
 
 const evidenceSchema = z.discriminatedUnion('kind', [
   z.object({
@@ -39,6 +39,8 @@ const findingSchema = z.object({
   evidence: z.array(evidenceSchema).min(1),
   recommendation: z.string().min(1),
   docsUrl: z.string(),
+  fingerprint: z.string().min(1),
+  baseline: z.enum(['new', 'known']).optional(),
   patch: z
     .object({
       kind: z.enum(['insert', 'replace']),
@@ -94,4 +96,11 @@ export const auditResultSchema = z.object({
   errors: z.array(auditErrorSchema),
   environment: z.object({ pagescopeVersion: z.string(), node: z.string() }),
   limitations: z.array(z.string()),
+  baseline: z
+    .object({
+      newFindings: z.number().int().nonnegative(),
+      knownFindings: z.number().int().nonnegative(),
+      staleEntries: z.number().int().nonnegative(),
+    })
+    .optional(),
 })

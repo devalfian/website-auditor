@@ -26,10 +26,13 @@ export const imgAltRule: RuleDefinition = {
       }
     }
 
-    const findings = missing.map((el: HtmlElement): FindingDraft => ({
+    const findings = missing.map((el: HtmlElement, index): FindingDraft => ({
       severity: 'medium',
       confidence: 'high',
       title: '<img> without an alt attribute',
+      // The src is the closest thing to a stable identity an image has. When src is
+      // absent the index is the only fallback, and it shifts if images are reordered.
+      fingerprint: getAttr(el, 'src') ?? `img-index:${index}`,
       description:
         'This image has no alt attribute at all. PageScope checks for the attribute only: it cannot judge whether existing alt text is useful, and alt="" is treated as an intentional decorative image.',
       evidence: [elementEvidence(snapshot, el)],
