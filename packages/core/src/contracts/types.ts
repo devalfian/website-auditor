@@ -1,4 +1,7 @@
-import type { Document } from 'parse5'
+import type { DefaultTreeAdapterMap } from 'parse5'
+
+/** parse5's default document type; `Document` is not exported by name. */
+export type HtmlDocument = DefaultTreeAdapterMap['document']
 
 export type Category = 'seo' | 'technical' | 'security' | 'accessibility'
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
@@ -73,7 +76,7 @@ export interface AuditSnapshot {
   headers: HeadersSummary
   redirectChain: string[]
   html: string
-  document: Document
+  document: HtmlDocument
   /** true when the response body exceeded the size limit and was cut. */
   truncated: boolean
 }
