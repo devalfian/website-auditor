@@ -1,0 +1,9 @@
+# Normalise line endings so the working tree matches CI on every platform.
+# Without this, Windows checkouts get CRLF (core.autocrlf=true) while Linux CI
+# sees LF, which makes `prettier --check` pass in CI and fail locally.
+* text=auto eol=lf
+
+# Keep binary assets untouched.
+*.png binary
+*.jpg binary
+*.ico binary

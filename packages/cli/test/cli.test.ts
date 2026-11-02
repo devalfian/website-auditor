@@ -3,12 +3,25 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { SCHEMA_VERSION, type AuditResult } from '@pagescope/core'
 import { EXIT, run } from '../src/run.js'
 
 const execFileAsync = promisify(execFile)
-const cliPath = join(process.cwd(), 'packages/cli/dist/cli.js')
+const repoRoot = process.cwd()
+const cliPath = join(repoRoot, 'packages/cli/dist/cli.js')
+const tsupCli = join(repoRoot, 'node_modules/tsup/dist/cli-default.js')
+
+/**
+ * The spawned-binary tests execute the built CLI, which imports @pagescope/core at
+ * runtime through node's resolver (not vitest's alias). Both packages must therefore
+ * be built, even on a fresh clone. Building here rather than relying on step order
+ * means `pnpm test` works on its own.
+ */
+beforeAll(async () => {
+  await execFileAsync(process.execPath, [tsupCli], { cwd: join(repoRoot, 'packages/core') })
+  await execFileAsync(process.execPath, [tsupCli], { cwd: join(repoRoot, 'packages/cli') })
+}, 180_000)
 
 async function runCli(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
   try {

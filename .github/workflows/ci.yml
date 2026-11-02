@@ -25,7 +25,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
-      - run: pnpm test
       - run: pnpm build
+      - run: pnpm test
       - run: npm pack --dry-run --workspace @pagescope/core
       - run: npm pack --dry-run --workspace pagescope
