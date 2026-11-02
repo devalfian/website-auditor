@@ -84,3 +84,7 @@ By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 ## Security
 
 Do not open public issues for security problems. See [SECURITY.md](SECURITY.md).
+
+## Releasing
+
+Maintainers: [`docs/releasing.md`](docs/releasing.md) covers the publish procedure, including why `pnpm publish` is required rather than `npm publish`.

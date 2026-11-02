@@ -1,6 +1,7 @@
 {
   "name": "pagescope",
   "version": "0.1.0",
+  "description": "CLI for PageScope: audit the technical and SEO quality of a single web page without a browser.",
   "type": "module",
   "license": "MIT",
   "bin": {
@@ -12,6 +13,22 @@
   "engines": {
     "node": ">=22"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devalfian/website-auditor.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/devalfian/website-auditor#readme",
+  "bugs": {
+    "url": "https://github.com/devalfian/website-auditor/issues"
+  },
+  "keywords": [
+    "seo",
+    "audit",
+    "cli",
+    "ci",
+    "static-analysis"
+  ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit"

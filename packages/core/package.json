@@ -1,6 +1,7 @@
 {
   "name": "@pagescope/core",
   "version": "0.1.0",
+  "description": "Audit the technical and SEO quality of a single web page without a browser.",
   "type": "module",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -16,6 +17,26 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devalfian/website-auditor.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/devalfian/website-auditor#readme",
+  "bugs": {
+    "url": "https://github.com/devalfian/website-auditor/issues"
+  },
+  "keywords": [
+    "seo",
+    "audit",
+    "html",
+    "accessibility",
+    "static-analysis",
+    "ci"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsup",
