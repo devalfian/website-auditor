@@ -6,6 +6,16 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    files: ['**/*.mjs', 'eslint.config.js', 'vitest.config.ts', '**/*.config.ts'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        URL: 'readonly',
+      },
+    },
+  },
+  {
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',

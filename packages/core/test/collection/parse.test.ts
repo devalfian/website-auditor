@@ -70,9 +70,7 @@ describe('parseHtml', () => {
   })
 
   it('collects nodes matching a predicate', () => {
-    const doc = parseHtml(
-      '<html><body><input id="a"><input id="b"><p id="c"></p></body></html>',
-    )
+    const doc = parseHtml('<html><body><input id="a"><input id="b"><p id="c"></p></body></html>')
     const withId = findAll(doc, (el) => getAttr(el, 'id') !== undefined)
     expect(withId.map((el) => getAttr(el, 'id'))).toEqual(['a', 'b', 'c'])
   })

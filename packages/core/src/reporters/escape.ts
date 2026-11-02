@@ -10,6 +10,8 @@ export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char] ?? char)
 }
 
+/* eslint-disable no-control-regex -- matching control characters is the entire
+   purpose of this function; the rule exists to catch accidental control chars. */
 /** Strips ANSI escape sequences, C0/C1 control characters and bidi overrides. */
 export function sanitizeForTerminal(value: string): string {
   return value
@@ -17,3 +19,4 @@ export function sanitizeForTerminal(value: string): string {
     .replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g, '')
     .replace(/[\u202a-\u202e\u2066-\u2069]/g, '')
 }
+/* eslint-enable no-control-regex */

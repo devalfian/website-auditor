@@ -79,7 +79,11 @@ export function snippetOf(html: string, el: HtmlElement, maxChars = 200): Snippe
     startOffset?: number
     endOffset?: number
   }
-  if (typeof startOffset !== 'number' || typeof endOffset !== 'number' || endOffset <= startOffset) {
+  if (
+    typeof startOffset !== 'number' ||
+    typeof endOffset !== 'number' ||
+    endOffset <= startOffset
+  ) {
     return undefined
   }
   const raw = html.slice(startOffset, endOffset)

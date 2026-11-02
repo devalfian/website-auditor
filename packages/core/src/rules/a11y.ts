@@ -26,24 +26,22 @@ export const imgAltRule: RuleDefinition = {
       }
     }
 
-    const findings = missing.map(
-      (el: HtmlElement): FindingDraft => ({
-        severity: 'medium',
-        confidence: 'high',
-        title: '<img> without an alt attribute',
-        description:
-          'This image has no alt attribute at all. PageScope checks for the attribute only: it cannot judge whether existing alt text is useful, and alt="" is treated as an intentional decorative image.',
-        evidence: [elementEvidence(snapshot, el)],
-        recommendation: 'Add alt text describing the image, or alt="" if it is purely decorative.',
-        ...locationProps(el),
-        patch: {
-          kind: 'insert',
-          target: 'html',
-          after: 'alt="{{describe the image}}"',
-          exact: false,
-        },
-      }),
-    )
+    const findings = missing.map((el: HtmlElement): FindingDraft => ({
+      severity: 'medium',
+      confidence: 'high',
+      title: '<img> without an alt attribute',
+      description:
+        'This image has no alt attribute at all. PageScope checks for the attribute only: it cannot judge whether existing alt text is useful, and alt="" is treated as an intentional decorative image.',
+      evidence: [elementEvidence(snapshot, el)],
+      recommendation: 'Add alt text describing the image, or alt="" if it is purely decorative.',
+      ...locationProps(el),
+      patch: {
+        kind: 'insert',
+        target: 'html',
+        after: 'alt="{{describe the image}}"',
+        exact: false,
+      },
+    }))
 
     return { status: 'failed', findings }
   },

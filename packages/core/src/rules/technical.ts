@@ -138,8 +138,4 @@ export const httpStatusRule: RuleDefinition = {
   },
 }
 
-export const technicalRules: RuleDefinition[] = [
-  duplicateIdRule,
-  metaViewportRule,
-  httpStatusRule,
-]
+export const technicalRules: RuleDefinition[] = [duplicateIdRule, metaViewportRule, httpStatusRule]

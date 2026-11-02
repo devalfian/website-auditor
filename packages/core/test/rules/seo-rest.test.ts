@@ -106,9 +106,7 @@ describe('seo/heading-structure', () => {
   })
 
   it('returns needs-review for two h1 elements', () => {
-    const result = headingStructureRule.evaluate(
-      snapshotOf(page('', '<h1>One</h1><h1>Two</h1>')),
-    )
+    const result = headingStructureRule.evaluate(snapshotOf(page('', '<h1>One</h1><h1>Two</h1>')))
     expect(result.status).toBe('needs-review')
     expect(result.findings[0]?.title).toContain('Multiple')
   })

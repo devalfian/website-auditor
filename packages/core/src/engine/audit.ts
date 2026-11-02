@@ -69,14 +69,12 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
     audit: finished(),
     target: { requestedUrl: request.url, finalUrl, httpStatus: null, redirectChain },
     status: 'failed',
-    rules: rules.map(
-      (rule): RuleExecutionSummary => ({
-        ruleId: rule.id,
-        status: 'error',
-        findingCount: 0,
-        error,
-      }),
-    ),
+    rules: rules.map((rule): RuleExecutionSummary => ({
+      ruleId: rule.id,
+      status: 'error',
+      findingCount: 0,
+      error,
+    })),
     findings: [],
     errors: [error],
     environment: { pagescopeVersion: VERSION, node: process.versions.node },
@@ -111,16 +109,14 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
       const result = rule.evaluate(snapshot)
       assertResultInvariants(rule, result)
 
-      const ruleFindings = result.findings.map(
-        (draft): Finding => ({
-          ...draft,
-          ruleId: rule.id,
-          category: rule.category,
-          status: result.status as FindingStatus,
-          target: { url: snapshot.finalUrl },
-          docsUrl: docsUrlFor(rule.docsSlug),
-        }),
-      )
+      const ruleFindings = result.findings.map((draft): Finding => ({
+        ...draft,
+        ruleId: rule.id,
+        category: rule.category,
+        status: result.status as FindingStatus,
+        target: { url: snapshot.finalUrl },
+        docsUrl: docsUrlFor(rule.docsSlug),
+      }))
 
       findings.push(...ruleFindings)
       summaries.push({

@@ -10,14 +10,12 @@ const okFetcher =
   (snapshot = brokenPage) =>
   async (): Promise<FetchOutcome> => ({ ok: true, snapshot })
 
-const failingFetcher =
-  () =>
-  async (): Promise<FetchOutcome> => ({
-    ok: false,
-    error: { code: 'BLOCKED_ADDRESS', message: 'blocked' },
-    finalUrl: null,
-    redirectChain: [],
-  })
+const failingFetcher = () => async (): Promise<FetchOutcome> => ({
+  ok: false,
+  error: { code: 'BLOCKED_ADDRESS', message: 'blocked' },
+  finalUrl: null,
+  redirectChain: [],
+})
 
 describe('registry', () => {
   it('registers 13 rules with unique namespaced ids', () => {

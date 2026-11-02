@@ -19,7 +19,9 @@ function evidenceBlock(evidence: Evidence): string {
       return `- Response header \`${sanitizeForTerminal(evidence.name)}\`: \`${sanitizeForTerminal(evidence.value)}\``
     case 'http-response':
       return `- Final response: HTTP ${evidence.status} at ${sanitizeForTerminal(evidence.finalUrl)}${
-        evidence.redirectChain.length > 0 ? ` after ${evidence.redirectChain.length} redirect(s)` : ''
+        evidence.redirectChain.length > 0
+          ? ` after ${evidence.redirectChain.length} redirect(s)`
+          : ''
       }`
     case 'measurement':
       return `- ${sanitizeForTerminal(evidence.label)}: ${sanitizeForTerminal(

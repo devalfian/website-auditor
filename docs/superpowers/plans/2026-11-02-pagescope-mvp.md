@@ -83,12 +83,14 @@ website-auditor/
 ### Task 1: Workspace, tooling, and first green test
 
 **Files:**
+
 - Create: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `vitest.config.ts`, `.gitignore`
 - Create: `packages/core/package.json`, `packages/core/tsconfig.json`, `packages/core/tsup.config.ts`, `packages/core/src/index.ts`
 - Create: `packages/cli/package.json`, `packages/cli/tsconfig.json`, `packages/cli/tsup.config.ts`
 - Test: `packages/core/test/smoke.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `@pagescope/core` exporting `VERSION: string`; workspace commands `pnpm -r typecheck`, `pnpm test`, `pnpm -r build`.
 
@@ -332,12 +334,14 @@ git commit -m "chore: scaffold pnpm workspace with core and cli packages"
 ### Task 2: Data contracts — types and zod report schema
 
 **Files:**
+
 - Create: `packages/core/src/contracts/types.ts`
 - Create: `packages/core/src/contracts/report-schema.ts`
 - Modify: `packages/core/src/index.ts`
 - Test: `packages/core/test/contracts/schema.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: every type used by all later tasks — `RuleStatus`, `Category`, `Severity`, `Confidence`, `FindingStatus`, `AuditStatus`, `AuditErrorCode`, `AuditError`, `HeadersSummary`, `Evidence`, `Patch`, `FindingDraft`, `RuleResult`, `AuditSnapshot`, `RuleDefinition`, `Finding`, `RuleExecutionSummary`, `AuditResult`; plus `SCHEMA_VERSION` and `auditResultSchema`.
 
@@ -681,10 +685,12 @@ git commit -m "feat(core): add data contracts and versioned report schema"
 ### Task 3: HTML parsing with source locations
 
 **Files:**
+
 - Create: `packages/core/src/collection/parse.ts`
 - Test: `packages/core/test/collection/parse.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parse5@8.1.0`.
 - Produces: `parseHtml(html: string): HtmlDocument`, `findAll`, `byTagName(root, name)`, `getAttr(el, name)`, `getTextContent(node)`, `getHead(root)`, `locationOf(el)`, `snippetOf(html, el, maxChars?)`.
 
@@ -733,7 +739,9 @@ import {
 
 describe('parseHtml', () => {
   it('finds elements by tag name', () => {
-    const doc = parseHtml('<html><head><title>Hi</title></head><body><img src="a.png"></body></html>')
+    const doc = parseHtml(
+      '<html><head><title>Hi</title></head><body><img src="a.png"></body></html>',
+    )
     expect(byTagName(doc, 'title')).toHaveLength(1)
     expect(byTagName(doc, 'img')).toHaveLength(1)
     expect(byTagName(doc, 'video')).toHaveLength(0)
@@ -772,7 +780,9 @@ describe('parseHtml', () => {
   })
 
   it('reads attributes case-insensitively and text content', () => {
-    const doc = parseHtml('<html><body><img SRC="a.png" alt="A cat"><p>Hello <b>world</b></p></body></html>')
+    const doc = parseHtml(
+      '<html><body><img SRC="a.png" alt="A cat"><p>Hello <b>world</b></p></body></html>',
+    )
     const [img] = byTagName(doc, 'img')
     expect(getAttr(img!, 'src')).toBe('a.png')
     expect(getAttr(img!, 'alt')).toBe('A cat')
@@ -883,7 +893,11 @@ export function snippetOf(html: string, el: HtmlElement, maxChars = 200): Snippe
     startOffset?: number
     endOffset?: number
   }
-  if (typeof startOffset !== 'number' || typeof endOffset !== 'number' || endOffset <= startOffset) {
+  if (
+    typeof startOffset !== 'number' ||
+    typeof endOffset !== 'number' ||
+    endOffset <= startOffset
+  ) {
     return undefined
   }
   const raw = html.slice(startOffset, endOffset)
@@ -919,10 +933,12 @@ git commit -m "feat(core): parse HTML with parse5 and expose source locations"
 ### Task 4: Connect-time address guard (the SSRF boundary)
 
 **Files:**
+
 - Create: `packages/core/src/collection/ip-guard.ts`
 - Test: `packages/core/test/collection/ip-guard.test.ts`
 
 **Interfaces:**
+
 - Consumes: `node:dns`, `node:net`.
 - Produces: `isBlockedAddress(address: string): boolean` and `createGuardedLookup({ allowPrivateNetworks }: { allowPrivateNetworks: boolean })`, which returns a `lookup` function compatible with `net.connect`/`undici` connector options. Rejections use error code `EBLOCKEDADDRESS`.
 
@@ -988,19 +1004,29 @@ const resolve = (
 ): Promise<{ error: NodeJS.ErrnoException | null; address: string; family?: number }> =>
   new Promise((resolvePromise) => {
     lookup(hostname, {}, (error, address, family) => {
-      resolvePromise({ error: error as NodeJS.ErrnoException | null, address: String(address), family })
+      resolvePromise({
+        error: error as NodeJS.ErrnoException | null,
+        address: String(address),
+        family,
+      })
     })
   })
 
 describe('createGuardedLookup', () => {
   it('rejects a hostname that resolves to loopback', async () => {
-    const { error } = await resolve(createGuardedLookup({ allowPrivateNetworks: false }), 'localhost')
+    const { error } = await resolve(
+      createGuardedLookup({ allowPrivateNetworks: false }),
+      'localhost',
+    )
     expect(error).not.toBeNull()
     expect(error?.code).toBe('EBLOCKEDADDRESS')
   })
 
   it('allows loopback when the internal escape hatch is enabled', async () => {
-    const { error, address } = await resolve(createGuardedLookup({ allowPrivateNetworks: true }), 'localhost')
+    const { error, address } = await resolve(
+      createGuardedLookup({ allowPrivateNetworks: true }),
+      'localhost',
+    )
     expect(error).toBeNull()
     expect(['127.0.0.1', '::1']).toContain(address)
   })
@@ -1115,7 +1141,9 @@ export function isBlockedAddress(address: string): boolean {
 
   if (isIPv4(candidate)) return isBlockedV4(candidate)
 
-  const withoutZone = candidate.includes('%') ? candidate.slice(0, candidate.indexOf('%')) : candidate
+  const withoutZone = candidate.includes('%')
+    ? candidate.slice(0, candidate.indexOf('%'))
+    : candidate
   if (!isIPv6(withoutZone)) return true
 
   const bytes = expandIpv6(candidate)
@@ -1150,10 +1178,17 @@ export type GuardedLookupCallback = (
 
 export function createGuardedLookup(
   options: GuardedLookupOptions,
-): (hostname: string, lookupOptions: LookupOptions | number | GuardedLookupCallback, callback?: GuardedLookupCallback) => void {
+): (
+  hostname: string,
+  lookupOptions: LookupOptions | number | GuardedLookupCallback,
+  callback?: GuardedLookupCallback,
+) => void {
   return (hostname, lookupOptions, callback) => {
-    const done = (typeof lookupOptions === 'function' ? lookupOptions : callback) as GuardedLookupCallback
-    const wantsAll = typeof lookupOptions === 'object' && lookupOptions !== null && lookupOptions.all === true
+    const done = (
+      typeof lookupOptions === 'function' ? lookupOptions : callback
+    ) as GuardedLookupCallback
+    const wantsAll =
+      typeof lookupOptions === 'object' && lookupOptions !== null && lookupOptions.all === true
 
     dnsLookup(hostname, { all: true, verbatim: true }, (error, addresses) => {
       if (error) {
@@ -1162,7 +1197,11 @@ export function createGuardedLookup(
       }
       const resolved = addresses as LookupAddress[]
       if (resolved.length === 0) {
-        done(Object.assign(new Error(`No addresses found for ${hostname}`), { code: 'ENOTFOUND' }), '', 0)
+        done(
+          Object.assign(new Error(`No addresses found for ${hostname}`), { code: 'ENOTFOUND' }),
+          '',
+          0,
+        )
         return
       }
 
@@ -1219,6 +1258,7 @@ git commit -m "feat(core): block private and reserved addresses at connect time"
 ### Task 5: HTTP collection layer
 
 **Files:**
+
 - Create: `packages/core/src/version.ts`
 - Create: `packages/core/src/collection/fetch.ts`
 - Modify: `packages/core/src/contracts/types.ts` (add `NETWORK_ERROR` to `AuditErrorCode`)
@@ -1227,6 +1267,7 @@ git commit -m "feat(core): block private and reserved addresses at connect time"
 - Test: `packages/core/test/collection/fetch.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createGuardedLookup` (Task 4), `parseHtml` (Task 3), `AuditSnapshot`/`AuditError` (Task 2).
 - Produces: `validateTarget(raw): { ok: true; url: URL } | { ok: false; error: AuditError }`, `fetchPage(rawUrl, options?): Promise<FetchOutcome>` where `FetchOutcome = { ok: true; snapshot: AuditSnapshot } | { ok: false; error: AuditError; finalUrl: string | null; redirectChain: string[] }`, plus `FetchOptions { timeoutMs?, maxBytes?, maxRedirects?, allowPrivateNetworks?, allowAddresses? }` and the constants `DEFAULT_TIMEOUT_MS`, `DEFAULT_MAX_BYTES`, `DEFAULT_MAX_REDIRECTS`.
 
@@ -1312,7 +1353,10 @@ describe('fetchPage', () => {
   it('returns a snapshot for an HTML page', async () => {
     await withServer(
       (_req, res) => {
-        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'x-frame-options': 'DENY' })
+        res.writeHead(200, {
+          'content-type': 'text/html; charset=utf-8',
+          'x-frame-options': 'DENY',
+        })
         res.end('<html><head><title>Hello</title></head><body><p>hi</p></body></html>')
       },
       async (base) => {
@@ -1505,7 +1549,10 @@ export function validateTarget(raw: string): TargetValidation {
   try {
     url = new URL(raw)
   } catch {
-    return { ok: false, error: { code: 'INVALID_URL', message: `Not a valid absolute URL: ${raw}` } }
+    return {
+      ok: false,
+      error: { code: 'INVALID_URL', message: `Not a valid absolute URL: ${raw}` },
+    }
   }
 
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
@@ -1694,8 +1741,7 @@ export async function fetchPage(rawUrl: string, options: FetchOptions = {}): Pro
       }
 
       const contentType = response.headers['content-type']
-      const looksLikeHtml =
-        typeof contentType !== 'string' || HTML_CONTENT_TYPE.test(contentType)
+      const looksLikeHtml = typeof contentType !== 'string' || HTML_CONTENT_TYPE.test(contentType)
 
       if (!looksLikeHtml) {
         await response.body.dump()
@@ -1772,12 +1818,14 @@ git commit -m "feat(core): add HTTP collection layer with redirect and size guar
 ### Task 6: Rule helpers plus the first two SEO rules
 
 **Files:**
+
 - Create: `packages/core/src/rules/shared.ts`
 - Create: `packages/core/src/rules/seo.ts`
 - Create: `packages/core/test/rules/helpers.ts`
 - Test: `packages/core/test/rules/seo-title.test.ts`, `packages/core/test/rules/seo-meta-description.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parse.ts` helpers (Task 3), `RuleDefinition`/`RuleResult` (Task 2).
 - Produces: `findMeta(snapshot, attribute, value)`, `elementEvidence(snapshot, el)`, `locationProps(el)`, `headScope(snapshot)`, `docsUrlFor(slug)`, `snapshotOf(html, overrides?)` test helper, and `seoRules: RuleDefinition[]` (grown by Task 7).
 
@@ -2136,10 +2184,12 @@ git commit -m "feat(core): add title and meta description rules with shared evid
 ### Task 7: Remaining SEO rules — canonical, robots, Open Graph, headings
 
 **Files:**
+
 - Modify: `packages/core/src/rules/seo.ts`
 - Test: `packages/core/test/rules/seo-rest.test.ts`
 
 **Interfaces:**
+
 - Consumes: `findMeta`, `elementEvidence`, `headScope`, `locationProps` (Task 6).
 - Produces: `canonicalRule`, `robotsMetaRule`, `openGraphRule`, `headingStructureRule`; `seoRules` grows to 6 entries.
 
@@ -2257,9 +2307,7 @@ describe('seo/heading-structure', () => {
   })
 
   it('returns needs-review for two h1 elements', () => {
-    const result = headingStructureRule.evaluate(
-      snapshotOf(page('', '<h1>One</h1><h1>Two</h1>')),
-    )
+    const result = headingStructureRule.evaluate(snapshotOf(page('', '<h1>One</h1><h1>Two</h1>')))
     expect(result.status).toBe('needs-review')
     expect(result.findings[0]?.title).toContain('Multiple')
   })
@@ -2606,10 +2654,12 @@ git commit -m "feat(core): add canonical, robots, open graph and heading rules"
 ### Task 8: Technical rules
 
 **Files:**
+
 - Create: `packages/core/src/rules/technical.ts`
 - Test: `packages/core/test/rules/technical.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parse.ts` helpers, `elementEvidence`/`locationProps` (Task 6).
 - Produces: `duplicateIdRule`, `metaViewportRule`, `httpStatusRule`, `technicalRules: RuleDefinition[]`.
 
@@ -2842,11 +2892,7 @@ export const httpStatusRule: RuleDefinition = {
   },
 }
 
-export const technicalRules: RuleDefinition[] = [
-  duplicateIdRule,
-  metaViewportRule,
-  httpStatusRule,
-]
+export const technicalRules: RuleDefinition[] = [duplicateIdRule, metaViewportRule, httpStatusRule]
 ```
 
 - [ ] **Step 4: Run the tests**
@@ -2869,11 +2915,13 @@ git commit -m "feat(core): add duplicate id, viewport and http status rules"
 ### Task 9: Accessibility and security rules
 
 **Files:**
+
 - Create: `packages/core/src/rules/a11y.ts`
 - Create: `packages/core/src/rules/security.ts`
 - Test: `packages/core/test/rules/a11y.test.ts`, `packages/core/test/rules/security.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parse.ts` helpers, `elementEvidence`, `locationProps`.
 - Produces: `imgAltRule`, `htmlLangRule`, `a11yRules`, `httpsRule`, `securityHeadersRule`, `securityRules`.
 
@@ -3038,24 +3086,22 @@ export const imgAltRule: RuleDefinition = {
       }
     }
 
-    const findings = missing.map(
-      (el: HtmlElement): FindingDraft => ({
-        severity: 'medium',
-        confidence: 'high',
-        title: '<img> without an alt attribute',
-        description:
-          'This image has no alt attribute. PageScope checks for the attribute only: it cannot judge whether existing alt text is useful, and alt="" is treated as an intentional decorative image.',
-        evidence: [elementEvidence(snapshot, el)],
-        recommendation: 'Add alt text describing the image, or alt="" if it is purely decorative.',
-        ...locationProps(el),
-        patch: {
-          kind: 'insert',
-          target: 'html',
-          after: 'alt="{{describe the image}}"',
-          exact: false,
-        },
-      }),
-    )
+    const findings = missing.map((el: HtmlElement): FindingDraft => ({
+      severity: 'medium',
+      confidence: 'high',
+      title: '<img> without an alt attribute',
+      description:
+        'This image has no alt attribute. PageScope checks for the attribute only: it cannot judge whether existing alt text is useful, and alt="" is treated as an intentional decorative image.',
+      evidence: [elementEvidence(snapshot, el)],
+      recommendation: 'Add alt text describing the image, or alt="" if it is purely decorative.',
+      ...locationProps(el),
+      patch: {
+        kind: 'insert',
+        target: 'html',
+        after: 'alt="{{describe the image}}"',
+        exact: false,
+      },
+    }))
 
     return { status: 'failed', findings }
   },
@@ -3238,12 +3284,14 @@ git commit -m "feat(core): add accessibility and security rule modules"
 ### Task 10: Rule registry and audit engine
 
 **Files:**
+
 - Create: `packages/core/src/engine/registry.ts`
 - Create: `packages/core/src/engine/audit.ts`
 - Modify: `packages/core/src/index.ts` (export the engine and registry)
 - Test: `packages/core/test/engine/audit.test.ts`
 
 **Interfaces:**
+
 - Consumes: `fetchPage`/`FetchOutcome` (Task 5), all four rule modules (Tasks 6–9), `SCHEMA_VERSION` (Task 2).
 - Produces: `allRules`, `selectRules(include?, exclude?)`, `class UnknownRuleError`, `LIMITATIONS`, `AuditRequest`, `audit(request): Promise<AuditResult>`.
 
@@ -3266,14 +3314,12 @@ const okFetcher =
   (snapshot = brokenPage) =>
   async (): Promise<FetchOutcome> => ({ ok: true, snapshot })
 
-const failingFetcher =
-  () =>
-  async (): Promise<FetchOutcome> => ({
-    ok: false,
-    error: { code: 'BLOCKED_ADDRESS', message: 'blocked' },
-    finalUrl: null,
-    redirectChain: [],
-  })
+const failingFetcher = () => async (): Promise<FetchOutcome> => ({
+  ok: false,
+  error: { code: 'BLOCKED_ADDRESS', message: 'blocked' },
+  finalUrl: null,
+  redirectChain: [],
+})
 
 describe('registry', () => {
   it('registers 13 rules with unique namespaced ids', () => {
@@ -3619,11 +3665,13 @@ git commit -m "feat(core): add rule registry and audit engine with per-rule erro
 ### Task 11: Reporters — JSON, Markdown, HTML
 
 **Files:**
+
 - Create: `packages/core/src/reporters/escape.ts`, `json.ts`, `markdown.ts`, `html.ts`
 - Modify: `packages/core/src/index.ts`
 - Test: `packages/core/test/reporters/reporters.test.ts`
 
 **Interfaces:**
+
 - Consumes: `AuditResult`, `auditResultSchema`, `SCHEMA_VERSION`.
 - Produces: `escapeHtml(value)`, `sanitizeForTerminal(value)`, `toJsonReport(result)`, `toMarkdownReport(result)`, `toHtmlReport(result)`.
 
@@ -3631,7 +3679,7 @@ git commit -m "feat(core): add rule registry and audit engine with per-rule erro
 
 `packages/core/test/reporters/reporters.test.ts`:
 
-```ts
+````ts
 import { describe, expect, it } from 'vitest'
 import { SCHEMA_VERSION, auditResultSchema } from '../../src/contracts/report-schema.js'
 import { escapeHtml, sanitizeForTerminal } from '../../src/reporters/escape.js'
@@ -3761,7 +3809,7 @@ describe('toHtmlReport', () => {
     for (const finding of parsed.findings) expect(html).toContain(escapeHtml(finding.title))
   })
 })
-```
+````
 
 - [ ] **Step 2: Run the test to verify it fails**
 
@@ -3806,7 +3854,7 @@ export function toJsonReport(result: AuditResult): string {
 
 - [ ] **Step 4: Write `markdown.ts`**
 
-```ts
+````ts
 import { sanitizeForTerminal } from './escape.js'
 import type { AuditResult, Evidence, Finding } from '../contracts/types.js'
 
@@ -3826,7 +3874,9 @@ function evidenceBlock(evidence: Evidence): string {
       return `- Response header \`${evidence.name}\`: \`${evidence.value}\``
     case 'http-response':
       return `- Final response: HTTP ${evidence.status} at ${evidence.finalUrl}${
-        evidence.redirectChain.length > 0 ? ` after ${evidence.redirectChain.length} redirect(s)` : ''
+        evidence.redirectChain.length > 0
+          ? ` after ${evidence.redirectChain.length} redirect(s)`
+          : ''
       }`
     case 'measurement':
       return `- ${evidence.label}: ${String(evidence.value)}${evidence.unit ? ` ${evidence.unit}` : ''}`
@@ -3903,7 +3953,9 @@ export function toMarkdownReport(result: AuditResult): string {
   if (result.errors.length > 0) {
     lines.push('## Execution errors', '')
     for (const error of result.errors) {
-      lines.push(`- ${error.code}: ${sanitizeForTerminal(error.message)}${error.ruleId ? ` (rule \`${error.ruleId}\`)` : ''}`)
+      lines.push(
+        `- ${error.code}: ${sanitizeForTerminal(error.message)}${error.ruleId ? ` (rule \`${error.ruleId}\`)` : ''}`,
+      )
     }
     lines.push('')
   }
@@ -3924,7 +3976,7 @@ export function toMarkdownReport(result: AuditResult): string {
 
   return lines.join('\n')
 }
-```
+````
 
 - [ ] **Step 5: Write `html.ts`**
 
@@ -3978,11 +4030,11 @@ export function toHtmlReport(result: AuditResult): string {
     .map(
       (finding) => `<article>
   <h3 class="sev-${finding.severity}">${escapeHtml(finding.severity.toUpperCase())} — ${escapeHtml(
-        finding.title,
-      )}</h3>
+    finding.title,
+  )}</h3>
   <p><code>${escapeHtml(finding.ruleId)}</code> · ${escapeHtml(finding.category)} · status ${escapeHtml(
-        finding.status,
-      )} · confidence ${escapeHtml(finding.confidence)}</p>
+    finding.status,
+  )} · confidence ${escapeHtml(finding.confidence)}</p>
   <p>${escapeHtml(finding.description)}</p>
   <h4>Evidence</h4>
   ${finding.evidence.map(evidenceHtml).join('\n  ')}
@@ -4080,10 +4132,12 @@ git commit -m "feat(core): add JSON, Markdown and HTML reporters with output esc
 ### Task 12: CLI
 
 **Files:**
+
 - Create: `packages/cli/src/config.ts`, `packages/cli/src/output.ts`, `packages/cli/src/run.ts`, `packages/cli/src/cli.ts`
 - Test: `packages/cli/test/cli.test.ts`
 
 **Interfaces:**
+
 - Consumes: `@pagescope/core` barrel (`audit`, `validateTarget`, `UnknownRuleError`, `VERSION`, reporters).
 - Produces: `run(argv, deps?): Promise<number>`, `EXIT` constants `{ OK: 0, POLICY: 1, USAGE: 2, UNAUDITABLE: 3 }`.
 
@@ -4156,9 +4210,7 @@ const highFinding = {
   title: 'Missing <title> element',
   description: 'no title',
   target: { url: 'https://example.com/' },
-  evidence: [
-    { kind: 'absence' as const, expected: '<title>', scope: 'scanned <head>' },
-  ],
+  evidence: [{ kind: 'absence' as const, expected: '<title>', scope: 'scanned <head>' }],
   recommendation: 'add one',
   docsUrl: 'https://example.com/docs/rules/seo-title.md',
 }
@@ -4355,7 +4407,9 @@ export function renderSummary(result: AuditResult): string {
   if (result.errors.length > 0) {
     lines.push('', 'Errors:')
     for (const error of result.errors) {
-      lines.push(`  ${error.code}${error.ruleId ? ` (${error.ruleId})` : ''}: ${sanitizeForTerminal(error.message)}`)
+      lines.push(
+        `  ${error.code}${error.ruleId ? ` (${error.ruleId})` : ''}: ${sanitizeForTerminal(error.message)}`,
+      )
     }
   }
 
@@ -4591,6 +4645,7 @@ git commit -m "feat(cli): implement audit command with documented exit codes"
 ### Task 13: Fixtures, documentation, CI and release hygiene
 
 **Files:**
+
 - Create: `packages/core/fixtures/index.html`, `packages/core/fixtures/clean.html`
 - Create: `docs/rules/*.md` (13 files), `docs/architecture.md`, `docs/security/threat-model.md`, `docs/contributing/adding-a-rule.md`
 - Create: `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `LICENSE`
@@ -4598,6 +4653,7 @@ git commit -m "feat(cli): implement audit command with documented exit codes"
 - Create: `examples/github-actions/audit.yml`, `examples/github-actions/README.md`
 
 **Interfaces:**
+
 - Consumes: everything above.
 - Produces: the artefacts a stranger needs to clone, run, test and contribute.
 
@@ -4623,7 +4679,7 @@ Each document contains exactly these sections:
 6. `## Recommendation` — the remediation text with a copy-pasteable example.
 7. `## References` — a link to the relevant standard (HTML spec, HTTP RFC, MDN) when one exists.
 
-`security-headers.md` must state, in its own words: *the presence of a header does not prove a secure configuration, and its absence does not prove a page is exploitable.* A test in Task 9 asserts this wording does not drift.
+`security-headers.md` must state, in its own words: _the presence of a header does not prove a secure configuration, and its absence does not prove a page is exploitable._ A test in Task 9 asserts this wording does not drift.
 
 - [ ] **Step 3: Write the architecture and threat-model docs**
 
@@ -4633,7 +4689,7 @@ Each document contains exactly these sections:
 
 - [ ] **Step 4: Write README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, LICENSE**
 
-`README.md` sections, in this order: name and one-line pitch; the three differentiators (no browser, snippet + patch, library/CLI/CI); install and quick start (`npx pagescope audit https://example.com`); what it checks (the 13-rule table with severities); example output from `packages/core/fixtures/index.html`, labelled as fixture data; the exit-code table; a GitHub Actions snippet; library usage; architecture pointer; security model pointer; **Known limitations** (no JavaScript execution, single page, no WCAG or exploitability claims, no crawl, no hosted service); roadmap (baseline mode, broken-link check, browser adapter, dashboard, hosting — all marked *planned*); development commands; contributing pointer; MIT licence.
+`README.md` sections, in this order: name and one-line pitch; the three differentiators (no browser, snippet + patch, library/CLI/CI); install and quick start (`npx pagescope audit https://example.com`); what it checks (the 13-rule table with severities); example output from `packages/core/fixtures/index.html`, labelled as fixture data; the exit-code table; a GitHub Actions snippet; library usage; architecture pointer; security model pointer; **Known limitations** (no JavaScript execution, single page, no WCAG or exploitability claims, no crawl, no hosted service); roadmap (baseline mode, broken-link check, browser adapter, dashboard, hosting — all marked _planned_); development commands; contributing pointer; MIT licence.
 
 `CONTRIBUTING.md`: prerequisites (Node 22, pnpm), the command list, then the "Adding a rule" recipe as an ordered list — (1) add the rule to the right module in `packages/core/src/rules/`, (2) give it a `docsSlug` and write `docs/rules/<slug>.md`, (3) add it to the module's exported array, (4) write the test in `packages/core/test/rules/`, (5) run `pnpm verify`.
 

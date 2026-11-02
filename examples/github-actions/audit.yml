@@ -1,0 +1,37 @@
+name: PageScope audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Absolute http(s) URL to audit
+        required: true
+        type: string
+      fail-on:
+        description: Minimum severity that fails the job
+        required: false
+        default: high
+        type: choice
+        options: [critical, high, medium, low, info, none]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run PageScope
+        run: >
+          npx --yes pagescope@latest audit "${{ inputs.url }}"
+          --format markdown
+          --out pagescope-report.md
+          --fail-on "${{ inputs.fail-on }}"
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pagescope-report
+          path: pagescope-report.md
