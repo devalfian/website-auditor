@@ -31,6 +31,7 @@ describe('technical/duplicate-id', () => {
   it('ignores empty and whitespace-only ids', () => {
     const result = duplicateIdRule.evaluate(snapshotOf(page('', '<p id=""></p><p id=" "></p>')))
     expect(result.status).toBe('passed')
+    expect(result.note).toBe('no id attributes on the page')
   })
 })
 

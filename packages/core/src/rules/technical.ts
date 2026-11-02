@@ -27,7 +27,11 @@ export const duplicateIdRule: RuleDefinition = {
     const duplicates = [...byId.entries()].filter(([, elements]) => elements.length > 1)
 
     if (duplicates.length === 0) {
-      return { status: 'passed', findings: [], note: `${byId.size} unique ids` }
+      return {
+        status: 'passed',
+        findings: [],
+        note: byId.size === 0 ? 'no id attributes on the page' : `${byId.size} unique ids`,
+      }
     }
 
     return {
