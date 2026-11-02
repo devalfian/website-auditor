@@ -6,7 +6,9 @@
   "bin": {
     "pagescope": "./dist/cli.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "engines": {
     "node": ">=22"
   },
@@ -16,6 +18,7 @@
   },
   "dependencies": {
     "@pagescope/core": "workspace:*",
-    "commander": "15.0.0"
+    "commander": "15.0.0",
+    "zod": "4.6.7"
   }
 }
