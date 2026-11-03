@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const SCHEMA_VERSION = '1.1.0'
+export const SCHEMA_VERSION = '2.0.0'
 
 const evidenceSchema = z.discriminatedUnion('kind', [
   z.object({
@@ -86,7 +86,14 @@ export const auditResultSchema = z.object({
   rules: z.array(
     z.object({
       ruleId: z.string(),
-      status: z.enum(['passed', 'failed', 'needs-review', 'not-applicable', 'error']),
+      status: z.enum([
+        'passed',
+        'failed',
+        'needs-review',
+        'not-applicable',
+        'unobservable',
+        'error',
+      ]),
       findingCount: z.number().int().nonnegative(),
       note: z.string().optional(),
       error: auditErrorSchema.optional(),

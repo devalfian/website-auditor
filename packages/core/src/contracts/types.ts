@@ -27,8 +27,20 @@ export type ObservationSource = 'served-html' | 'rendered-dom' | 'http-headers'
 export type Category = 'seo' | 'technical' | 'security' | 'accessibility'
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
 export type Confidence = 'high' | 'medium' | 'low'
-export type RuleStatus = 'passed' | 'failed' | 'needs-review' | 'not-applicable' | 'error'
-export type EvaluatedStatus = Exclude<RuleStatus, 'error'>
+export type RuleStatus =
+  | 'passed'
+  | 'failed'
+  | 'needs-review'
+  | 'not-applicable'
+  | 'unobservable'
+  | 'error'
+
+/**
+ * Statuses a rule may return. 'unobservable' is excluded because it describes the
+ * observation, not the rule's judgement: only the engine may decide that a page
+ * could not be seen well enough to conclude anything.
+ */
+export type EvaluatedStatus = Exclude<RuleStatus, 'unobservable' | 'error'>
 export type FindingStatus = 'failed' | 'needs-review'
 export type AuditStatus = 'completed' | 'partial' | 'failed'
 

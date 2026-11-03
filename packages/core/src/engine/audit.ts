@@ -104,6 +104,16 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
   const errors: AuditError[] = []
 
   for (const rule of rules) {
+    if (rule.observation === 'rendered-dom' && snapshot.rendering.kind === 'client-rendered') {
+      summaries.push({
+        ruleId: rule.id,
+        status: 'unobservable',
+        findingCount: 0,
+        note: `needs the rendered DOM; ${snapshot.rendering.reason}`,
+      })
+      continue
+    }
+
     if (!rule.appliesTo(snapshot)) {
       summaries.push({ ruleId: rule.id, status: 'not-applicable', findingCount: 0 })
       continue

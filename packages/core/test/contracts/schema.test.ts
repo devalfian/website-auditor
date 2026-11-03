@@ -37,6 +37,14 @@ describe('auditResultSchema', () => {
     expect(() => auditResultSchema.parse({ ...minimal, status: 'done' })).toThrow()
   })
 
+  it('accepts an unobservable rule status', () => {
+    const withUnobservable: AuditResult = {
+      ...minimal,
+      rules: [{ ruleId: 'a11y/img-alt', status: 'unobservable', findingCount: 0 }],
+    }
+    expect(auditResultSchema.parse(withUnobservable).rules[0]?.status).toBe('unobservable')
+  })
+
   it('accepts a finding with absence evidence and no location', () => {
     const withFinding: AuditResult = {
       ...minimal,

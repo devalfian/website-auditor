@@ -18,6 +18,10 @@ const failingFetcher = () => async (): Promise<FetchOutcome> => ({
   redirectChain: [],
 })
 
+const clientRendered = snapshotOf(
+  '<!doctype html><html lang="en"><head><title>App</title></head><body><div id="root"></div></body></html>',
+)
+
 describe('registry', () => {
   it('registers 13 rules with unique namespaced ids', () => {
     expect(allRules).toHaveLength(13)
@@ -87,6 +91,38 @@ describe('audit', () => {
     await expect(
       audit({ url: 'https://example.com/', rules: ['nope/nope'], fetcher: okFetcher() }),
     ).rejects.toBeInstanceOf(UnknownRuleError)
+  })
+
+  it('reports unobservable rather than a false pass on a client-rendered page', async () => {
+    const result = await audit({ url: 'https://example.com/', fetcher: okFetcher(clientRendered) })
+    const imgAlt = result.rules.find((summary) => summary.ruleId === 'a11y/img-alt')
+    expect(imgAlt?.status).toBe('unobservable')
+    expect(imgAlt?.findingCount).toBe(0)
+    expect(imgAlt?.note).toContain('needs the rendered DOM')
+    expect(imgAlt?.note).toContain('mount point')
+  })
+
+  it('does not pretend the subject was absent on a client-rendered page', async () => {
+    const result = await audit({ url: 'https://example.com/', fetcher: okFetcher(clientRendered) })
+    const imgAlt = result.rules.find((summary) => summary.ruleId === 'a11y/img-alt')
+    expect(imgAlt?.note).not.toContain('no <img> elements')
+  })
+
+  it('still evaluates served-html rules on a client-rendered page', async () => {
+    const result = await audit({ url: 'https://example.com/', fetcher: okFetcher(clientRendered) })
+    const htmlLang = result.rules.find((summary) => summary.ruleId === 'a11y/html-lang')
+    expect(htmlLang?.status).toBe('passed')
+    const title = result.rules.find((summary) => summary.ruleId === 'seo/title')
+    expect(title?.status).toBe('passed')
+  })
+
+  it('never lets unobservable carry findings and never marks the audit partial', async () => {
+    const result = await audit({ url: 'https://example.com/', fetcher: okFetcher(clientRendered) })
+    expect(result.status).toBe('completed')
+    const unobservable = result.rules.filter((summary) => summary.status === 'unobservable')
+    expect(unobservable.length).toBeGreaterThan(0)
+    for (const summary of unobservable) expect(summary.findingCount).toBe(0)
+    expect(result.errors).toEqual([])
   })
 
   it('records findings with rule metadata attached', async () => {
