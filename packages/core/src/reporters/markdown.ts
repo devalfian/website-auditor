@@ -41,6 +41,7 @@ function findingBlock(finding: Finding): string {
     `- Rule: \`${finding.ruleId}\` (${finding.category})`,
     `- Status: ${finding.status}`,
     `- Confidence: ${finding.confidence}`,
+    `- Observed from: ${finding.observedFrom}`,
     `- Docs: ${finding.docsUrl}`,
     '',
     sanitizeForTerminal(finding.description),

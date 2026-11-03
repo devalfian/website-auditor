@@ -39,6 +39,7 @@ const findingSchema = z.object({
   evidence: z.array(evidenceSchema).min(1),
   recommendation: z.string().min(1),
   docsUrl: z.string(),
+  observedFrom: z.enum(['served-html', 'rendered-dom', 'http-headers']),
   fingerprint: z.string().min(1),
   baseline: z.enum(['new', 'known']).optional(),
   patch: z

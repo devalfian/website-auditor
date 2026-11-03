@@ -130,6 +130,7 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
         status: result.status as FindingStatus,
         target: { url: snapshot.finalUrl },
         docsUrl: docsUrlFor(rule.docsSlug),
+        observedFrom: rule.observation,
         fingerprint: fingerprintOf(rule.id, draft.fingerprint),
       }))
 

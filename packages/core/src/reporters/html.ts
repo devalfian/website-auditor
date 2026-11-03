@@ -51,7 +51,9 @@ export function toHtmlReport(result: AuditResult): string {
   )}</h3>
   <p><code>${escapeHtml(finding.ruleId)}</code> · ${escapeHtml(
     finding.category,
-  )} · status ${escapeHtml(finding.status)} · confidence ${escapeHtml(finding.confidence)}</p>
+  )} · status ${escapeHtml(finding.status)} · confidence ${escapeHtml(
+    finding.confidence,
+  )} · from ${escapeHtml(finding.observedFrom)}</p>
   <p>${escapeHtml(finding.description)}</p>
   <h4>Evidence</h4>
   ${finding.evidence.map(evidenceHtml).join('\n  ')}

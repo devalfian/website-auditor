@@ -141,6 +141,11 @@ export interface Finding extends FindingDraft {
   status: FindingStatus
   target: { url: string }
   docsUrl: string
+  /**
+   * The representation this finding was derived from. Reports must be readable
+   * without a ruleId -> observation lookup table from a particular PageScope version.
+   */
+  observedFrom: ObservationSource
   /** Computed by the engine: hash of rule id plus the rule's discriminator. */
   fingerprint: string
   /** Set only when a baseline was applied. Absent means no baseline was in use. */

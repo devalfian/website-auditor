@@ -68,10 +68,35 @@ describe('auditResultSchema', () => {
           ],
           recommendation: 'Add a <title> element inside <head>.',
           docsUrl: 'https://github.com/devalfian/website-auditor/blob/main/docs/rules/seo-title.md',
+          observedFrom: 'served-html',
           fingerprint: '0123456789abcdef',
         },
       ],
     }
     expect(auditResultSchema.parse(withFinding).findings).toHaveLength(1)
+  })
+
+  it('rejects a finding without observedFrom', () => {
+    const withoutProvenance = {
+      ...minimal,
+      status: 'partial',
+      findings: [
+        {
+          ruleId: 'seo/title',
+          category: 'seo',
+          status: 'failed',
+          severity: 'high',
+          confidence: 'high',
+          title: 'Missing <title>',
+          description: 'No <title> element was found inside <head>.',
+          target: { url: 'https://example.com/' },
+          evidence: [{ kind: 'absence', expected: '<title>', scope: 'scanned <head>' }],
+          recommendation: 'Add a <title> element inside <head>.',
+          docsUrl: 'https://example.com/docs/rules/seo-title.md',
+          fingerprint: '0123456789abcdef',
+        },
+      ],
+    }
+    expect(() => auditResultSchema.parse(withoutProvenance)).toThrow()
   })
 })

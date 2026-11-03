@@ -34,6 +34,7 @@ const result: AuditResult = {
       status: 'failed',
       severity: 'high',
       confidence: 'high',
+      observedFrom: 'served-html',
       title: `Title contains ${hostileTitle}`,
       description: 'Evidence contains <b>markup</b> that must be escaped.',
       target: { url: 'https://example.com/' },
@@ -57,6 +58,7 @@ const result: AuditResult = {
       status: 'needs-review',
       severity: 'medium',
       confidence: 'low',
+      observedFrom: 'served-html',
       title: 'Ambiguous language declaration',
       description: 'Needs a human decision.',
       target: { url: 'https://example.com/' },
@@ -88,6 +90,14 @@ describe('toJsonReport', () => {
     const json = toJsonReport(result)
     expect(json.endsWith('\n')).toBe(true)
     expect(() => auditResultSchema.parse(JSON.parse(json))).not.toThrow()
+  })
+})
+
+describe('finding provenance', () => {
+  it('states which representation produced each finding in every format', () => {
+    expect(toMarkdownReport(result)).toContain('Observed from: served-html')
+    expect(toHtmlReport(result)).toContain('from served-html')
+    expect(JSON.parse(toJsonReport(result)).findings[0].observedFrom).toBe('served-html')
   })
 })
 
