@@ -17,6 +17,13 @@ It does not check headings built with role="heading" or aria-level. Only real h1
 - `needs-review` — used where the correct answer depends on intent PageScope cannot know.
 - `not-applicable` — the rule does not apply to this page.
 - `error` — set by the engine when the rule throws. A rule that did not run is never reported as passed.
+- `unobservable` — set by the engine when the page is rendered client-side and this rule needs the rendered DOM. A rule cannot return this status.
+
+## Observation source
+
+This rule declares `observation: 'rendered-dom'`.
+
+It needs the DOM after JavaScript has run. On a page PageScope detects as client-rendered, the engine reports this rule as unobservable and never calls evaluate.
 
 ## Evidence
 

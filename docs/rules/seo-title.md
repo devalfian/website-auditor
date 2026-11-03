@@ -17,6 +17,13 @@ It does not check title quality, length, uniqueness across pages, or keyword usa
 - `needs-review` — used where the correct answer depends on intent PageScope cannot know.
 - `not-applicable` — the rule does not apply to this page.
 - `error` — set by the engine when the rule throws. A rule that did not run is never reported as passed.
+- `unobservable` — set by the engine when the page is rendered client-side and this rule needs the rendered DOM. A rule cannot return this status.
+
+## Observation source
+
+This rule declares `observation: 'served-html'`.
+
+It reaches a conclusion from the served response alone, so client-side rendering does not affect it.
 
 ## Evidence
 

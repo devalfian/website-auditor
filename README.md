@@ -84,6 +84,20 @@ The `packages/core/fixtures/` pages are synthetic and exist so the rules can be 
 
 The gate is opt-in: `--fail-on` defaults to `none`, so a plain run never fails a build just because it found something.
 
+`--fail-on` counts only findings whose status is `failed`. A finding that says "PageScope
+cannot determine which applies here" is `needs-review` and never fails a build. This is a
+change in v0.2.0: previously `needs-review` findings also failed the gate, which meant the
+report and the exit code disagreed.
+
+`--min-confidence <low|medium|high>` (default `low`) additionally requires a finding to be
+at least that confident before it counts. Findings below the threshold are still reported
+as `failed`; they are only excluded from the exit code, and the summary says how many were
+excluded:
+
+```
+gate: 2 failed findings below --min-confidence high were not counted
+```
+
 ```bash
 node packages/cli/dist/cli.js https://example.com --fail-on high
 node packages/cli/dist/cli.js https://example.com --format markdown --out report.md
@@ -123,15 +137,23 @@ console.log(toMarkdownReport(result))
 
 ## Known limitations
 
-These are not TODOs — they are deliberate boundaries of v0.1.0:
+These are not TODOs — each one is a boundary the report states for itself. Every report
+carries a `coverage` block listing exactly what was and was not inspected.
 
-- **No JavaScript execution.** Only the raw HTML response is inspected.
-- **One page per run.** Links are not crawled.
-- **No score.** Severity and status only.
-- **No WCAG conformance claim.** Automated checks cannot establish conformance.
-- **No exploitability claim.** A missing security header is reported as absent, nothing more.
-- **No hosted service.** There is no public endpoint, by design.
-- **Private and reserved addresses are refused** at connect time, including IP literals and redirects. This makes auditing `localhost` impossible on purpose.
+| Boundary                                                                                             | Why it exists                                                                                                                                                                                        |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No JavaScript execution.** Only the raw HTML response is inspected.                                | A browser would make the tool slower and unusable on bare CI runners. Rules that need the rendered DOM report `unobservable` on pages PageScope detects as client-rendered, instead of a false pass. |
+| **One page per run.** Links are not crawled.                                                         | Crawling changes the security model and the promise of the tool. `coverage.notInspected` lists `linked-pages` until it ships.                                                                        |
+| **No score.** Severity and status only.                                                              | A single number hides which findings are guesses.                                                                                                                                                    |
+| **No WCAG conformance claim.**                                                                       | Automated checks cannot establish conformance, and `coverage.notInspected` always says so.                                                                                                           |
+| **No exploitability claim.**                                                                         | A missing security header is reported as absent, nothing more.                                                                                                                                       |
+| **No hosted service.**                                                                               | There is no public endpoint, by design.                                                                                                                                                              |
+| **Private and reserved addresses are refused** at connect time, including IP literals and redirects. | Auditing `localhost` is impossible on purpose.                                                                                                                                                       |
+
+Detection is deliberately conservative. A single-page app that renders into a mount point
+that already contains a placeholder is **not** detected, and behaves exactly as it did in
+v0.1.0. PageScope only claims `client-rendered` when it can point at the element that
+proves it.
 
 ## Roadmap
 

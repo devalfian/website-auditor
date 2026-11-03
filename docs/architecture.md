@@ -29,15 +29,24 @@ Consequences that matter:
 
 ### Status model
 
-| Status           | Meaning                                                                         |
-| ---------------- | ------------------------------------------------------------------------------- |
-| `passed`         | the rule ran and the condition held                                             |
-| `failed`         | the rule ran and the condition did not hold                                     |
-| `needs-review`   | the rule ran but the correct answer depends on intent PageScope cannot know     |
-| `not-applicable` | the rule could not apply to this page (e.g. `img-alt` on a page with no images) |
-| `error`          | the rule did not complete. **Only the engine sets this.**                       |
+| Status           | Meaning                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| `passed`         | the rule ran and the condition held                                                       |
+| `failed`         | the rule ran and the condition did not hold                                               |
+| `needs-review`   | the rule ran but the correct answer depends on intent PageScope cannot know               |
+| `not-applicable` | the rule could not apply to this page (e.g. `img-alt` on a page with no images)           |
+| `unobservable`   | the rule could not observe enough of the page to conclude. **Only the engine sets this.** |
+| `error`          | the rule did not complete. **Only the engine sets this.**                                 |
 
 A rule that did not run must never be reported as `passed`. That is the single most important invariant in the codebase, enforced by `assertResultInvariants` in `engine/audit.ts`.
+
+`unobservable` exists because `not-applicable` was carrying two meanings. "The subject is verifiably absent" and "I could not see enough to tell" are different claims, and printing both as `[-]` with the same note told the reader nothing. A rule declares the representation it needs (`observation`); the engine marks it `unobservable` when the page is client-rendered and that representation is not what it has. Because `RuleResult.status` is typed `EvaluatedStatus`, a rule cannot return `unobservable` even by mistake.
+
+### Coverage and derived limitations
+
+`AuditResult.coverage` records what was read (`representation`), whether that representation is faithful (`rendering`, backed by `renderingEvidence`), how many rules reached a conclusion, which rules the engine refused to conclude (`unobservableRules`), and what was deliberately not inspected (`notInspected`).
+
+`limitations` is derived from it by `limitationsFor()` in `engine/limits.ts`. No sentence is asserted unconditionally: removing an entry from `notInspected` removes its sentence. Reporters still read `result.limitations` directly and never recalculate it.
 
 ### Audit status
 

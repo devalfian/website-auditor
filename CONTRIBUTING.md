@@ -77,6 +77,23 @@ If you add a rule to the registry, `packages/core/test/engine/audit.test.ts` wil
 - Tests are required for behaviour changes, and they must run offline.
 - If you change `Finding`, `AuditResult`, an exit code or the public API, say so in the PR template.
 
+## Rule confidence and observation sources
+
+Every rule declares `observation`, the minimum representation it needs to reach a
+conclusion: `'served-html'`, `'rendered-dom'`, or `'http-headers'`. A rule that needs the
+rendered DOM is reported as `unobservable` — not `passed` — when the page is client-rendered.
+Full guidance is in [`docs/contributing/adding-a-rule.md`](docs/contributing/adding-a-rule.md).
+
+Every finding carries a confidence value, which is separate from its severity:
+
+- `high` — the conclusion is a direct reading of the served bytes; no assumption.
+- `medium` — it depends on a convention the specification does not force.
+- `low` — it depends on an assumption that is stated but cannot be verified.
+
+`confidence` is orthogonal to `severity` and to `status`. It decides whether the CI gate
+counts a finding (`--min-confidence`), and it is printed in the terminal summary, Markdown
+and HTML.
+
 ## Code of conduct
 
 By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).

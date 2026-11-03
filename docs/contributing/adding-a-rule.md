@@ -22,6 +22,7 @@ export const metaCharsetRule: RuleDefinition = {
   title: 'Document declares a character encoding',
   description: 'Checks for a <meta charset> element inside <head>.',
   docsSlug: 'technical-meta-charset',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const head = getHead(snapshot.document)
@@ -152,3 +153,22 @@ All four must pass. Tests must not require network access.
 - [ ] No network access in the rule or its test
 - [ ] `description` states what the rule does not check
 - [ ] Rule count in `test/engine/audit.test.ts` updated
+- [ ] `observation` is declared, and choosing `'rendered-dom'` comes with one sentence in
+      the rule description explaining why
+
+## What `observation` means
+
+- `'served-html'` — the bytes the server sent are enough.
+- `'rendered-dom'` — the rule needs the DOM after JavaScript ran. On a page PageScope
+  detects as client-rendered, the engine reports your rule as `unobservable` and never
+  calls `evaluate`. Prefer this over guessing: a false pass is worse than an admitted gap.
+- `'http-headers'` — the rule reads only the status line and response headers.
+
+## What `confidence` means
+
+- `high` — the conclusion is a direct reading of the served bytes; no assumption.
+- `medium` — it depends on a convention the specification does not force.
+- `low` — it depends on an assumption you state but cannot verify.
+
+`confidence` is orthogonal to `severity` and to `status`. It decides whether the CI gate
+counts a finding, and it is printed in the terminal summary, Markdown and HTML.
