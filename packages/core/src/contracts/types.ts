@@ -3,6 +3,19 @@ import type { DefaultTreeAdapterMap } from 'parse5'
 /** parse5's default document type; `Document` is not exported by name. */
 export type HtmlDocument = DefaultTreeAdapterMap['document']
 
+/**
+ * Whether the served HTML is a faithful representation of what a user sees.
+ * PageScope only reports 'client-rendered' when a specific signal proves it, so
+ * a missed detection leaves the v0.1.0 behaviour unchanged.
+ */
+export type RenderingKind = 'server-rendered' | 'client-rendered'
+
+export interface RenderingAssessment {
+  kind: RenderingKind
+  reason: string
+  evidence: Evidence[]
+}
+
 export type Category = 'seo' | 'technical' | 'security' | 'accessibility'
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
 export type Confidence = 'high' | 'medium' | 'low'
