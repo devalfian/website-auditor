@@ -4,6 +4,7 @@ import { z } from 'zod'
 export const configSchema = z
   .object({
     failOn: z.enum(['critical', 'high', 'medium', 'low', 'info', 'none']).optional(),
+    minConfidence: z.enum(['low', 'medium', 'high']).optional(),
     format: z.enum(['summary', 'json', 'markdown', 'html', 'all']).optional(),
     timeoutMs: z.number().int().positive().max(120_000).optional(),
     rules: z.array(z.string().min(1)).optional(),

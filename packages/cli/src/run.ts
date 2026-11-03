@@ -23,6 +23,14 @@ type Severity = keyof typeof SEVERITY_RANK
 type FailOn = Severity | 'none'
 type Format = 'summary' | 'json' | 'markdown' | 'html' | 'all'
 
+const CONFIDENCE_RANK = { low: 0, medium: 1, high: 2 } as const
+type Confidence = keyof typeof CONFIDENCE_RANK
+const CONFIDENCE_LEVELS: readonly Confidence[] = ['low', 'medium', 'high']
+
+function isConfidence(value: string): value is Confidence {
+  return (CONFIDENCE_LEVELS as readonly string[]).includes(value)
+}
+
 export interface CliDeps {
   auditFn?: typeof audit
   out?: OutputSink
@@ -51,6 +59,7 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
     .option('--format <format>', 'summary | json | markdown | html | all', 'summary')
     .option('--out <path>', 'write the report to this path instead of stdout')
     .option('--fail-on <severity>', 'critical | high | medium | low | info | none', 'none')
+    .option('--min-confidence <level>', 'low | medium | high', 'low')
     .option('--rules <ids>', 'comma separated rule ids to run')
     .option('--exclude-rules <ids>', 'comma separated rule ids to skip')
     .option('--config <path>', 'path to a pagescope.config.json file')
@@ -78,6 +87,7 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
     format: Format
     out?: string
     failOn: FailOn
+    minConfidence: string
     rules?: string
     excludeRules?: string
     config?: string
@@ -106,6 +116,9 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
   const fromCli = (name: string): boolean => program.getOptionValueSource(name) === 'cli'
   const format = fromCli('format') ? options.format : (config.format ?? options.format)
   const failOn: FailOn = fromCli('failOn') ? options.failOn : (config.failOn ?? options.failOn)
+  const minConfidence = fromCli('minConfidence')
+    ? options.minConfidence
+    : (config.minConfidence ?? options.minConfidence)
   const timeoutMs = fromCli('timeout')
     ? Number(options.timeout)
     : (config.timeoutMs ?? Number(options.timeout))
@@ -114,6 +127,11 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
 
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     out.error('--timeout must be a positive number of milliseconds\n')
+    return EXIT.USAGE
+  }
+
+  if (!isConfidence(minConfidence)) {
+    out.error('--min-confidence must be one of low, medium, high\n')
     return EXIT.USAGE
   }
 
@@ -184,8 +202,25 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
     return EXIT.OK
   }
 
+  // A finding that says "PageScope cannot determine which applies here" is not an
+  // assertion of breakage. Only `failed` findings may fail a build.
+  const policyFindings = (
+    result.baseline
+      ? result.findings.filter((finding) => finding.baseline === 'new')
+      : result.findings
+  ).filter((finding) => finding.status === 'failed')
+
+  const countedFindings = policyFindings.filter(
+    (finding) => CONFIDENCE_RANK[finding.confidence] >= CONFIDENCE_RANK[minConfidence],
+  )
+  const excludedByConfidence = policyFindings.length - countedFindings.length
+
+  const policyFailed =
+    failOn !== 'none' &&
+    countedFindings.some((finding) => SEVERITY_RANK[finding.severity] >= SEVERITY_RANK[failOn])
+
   if (format === 'summary') {
-    out.write(renderSummary(result))
+    out.write(renderSummary(result, { minConfidence, excluded: excludedByConfidence }))
   } else if (options.out) {
     const base = options.out
     if (format === 'all') {
@@ -212,18 +247,6 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
           : toHtmlReport(result),
     )
   }
-
-  // A finding that says "PageScope cannot determine which applies here" is not an
-  // assertion of breakage. Only `failed` findings may fail a build.
-  const policyFindings = (
-    result.baseline
-      ? result.findings.filter((finding) => finding.baseline === 'new')
-      : result.findings
-  ).filter((finding) => finding.status === 'failed')
-
-  const policyFailed =
-    failOn !== 'none' &&
-    policyFindings.some((finding) => SEVERITY_RANK[finding.severity] >= SEVERITY_RANK[failOn])
 
   return policyFailed ? EXIT.POLICY : EXIT.OK
 }

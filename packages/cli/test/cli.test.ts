@@ -187,6 +187,53 @@ describe('run() with an injected audit', () => {
     expect(code).toBe(EXIT.POLICY)
   })
 
+  const lowConfidenceFinding = { ...highFinding, confidence: 'medium' as const }
+
+  it('excludes a low-confidence finding from the gate when --min-confidence is high', async () => {
+    captured.length = 0
+    const code = await run(
+      ['https://example.com/', '--fail-on', 'high', '--min-confidence', 'high'],
+      { auditFn: async () => baseResult({ findings: [lowConfidenceFinding] }), out: sink },
+    )
+    expect(code).toBe(EXIT.OK)
+    expect(captured.join('\n')).toContain('below --min-confidence high were not counted')
+  })
+
+  it('still fails the gate when the finding meets --min-confidence', async () => {
+    const code = await run(
+      ['https://example.com/', '--fail-on', 'high', '--min-confidence', 'high'],
+      { auditFn: async () => baseResult({ findings: [highFinding] }), out: sink },
+    )
+    expect(code).toBe(EXIT.POLICY)
+  })
+
+  it('defaults --min-confidence to low, so nothing is excluded', async () => {
+    const code = await run(['https://example.com/', '--fail-on', 'high'], {
+      auditFn: async () => baseResult({ findings: [lowConfidenceFinding] }),
+      out: sink,
+    })
+    expect(code).toBe(EXIT.POLICY)
+  })
+
+  it('exits 2 for an unknown --min-confidence value', async () => {
+    const code = await run(['https://example.com/', '--min-confidence', 'bogus'], {
+      auditFn: async () => baseResult(),
+      out: sink,
+    })
+    expect(code).toBe(EXIT.USAGE)
+  })
+
+  it('prints confidence and coverage in the terminal summary', async () => {
+    captured.length = 0
+    await run(['https://example.com/', '--fail-on', 'high'], {
+      auditFn: async () => baseResult({ findings: [highFinding] }),
+      out: sink,
+    })
+    const summary = captured.join('\n')
+    expect(summary).toContain('[confidence: high]')
+    expect(summary).toContain('coverage: served-html (server-rendered)')
+  })
+
   it('returns 3 when the audit itself failed', async () => {
     const code = await run(['https://example.com/'], {
       auditFn: async () => baseResult({ status: 'failed' }),

@@ -1,7 +1,7 @@
 import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { sanitizeForTerminal } from '@pagescope/core'
-import type { AuditResult } from '@pagescope/core'
+import type { AuditResult, Confidence } from '@pagescope/core'
 
 export interface OutputSink {
   write(text: string): void
@@ -32,10 +32,24 @@ const STATUS_GLYPH: Record<string, string> = {
   error: '[err] ',
 }
 
-export function renderSummary(result: AuditResult): string {
+export interface GateSummary {
+  minConfidence: Confidence
+  /** Failed findings the gate did not count because their confidence was too low. */
+  excluded: number
+}
+
+export function renderSummary(result: AuditResult, gate?: GateSummary): string {
   const lines = [
     `PageScope — ${sanitizeForTerminal(result.target.requestedUrl)}`,
     `status: ${result.status} | findings: ${result.findings.length} | ${result.audit.durationMs}ms`,
+    `coverage: ${result.coverage.representation} (${result.coverage.rendering}) | ${
+      result.coverage.rulesEvaluated
+    }/${result.rules.length} rules evaluated${
+      result.coverage.unobservableRules.length > 0
+        ? ` | unobservable: ${result.coverage.unobservableRules.join(', ')}`
+        : ''
+    }`,
+    `not inspected: ${result.coverage.notInspected.join(', ') || 'nothing'}`,
   ]
 
   if (result.baseline) {
@@ -58,7 +72,7 @@ export function renderSummary(result: AuditResult): string {
     lines.push('', 'Findings:')
     for (const finding of result.findings) {
       lines.push(
-        `  ${finding.severity.padEnd(8)} ${sanitizeForTerminal(finding.title)} (${finding.ruleId})`,
+        `  ${finding.severity.padEnd(8)} ${sanitizeForTerminal(finding.title)} (${finding.ruleId}) [confidence: ${finding.confidence}]`,
       )
       if (finding.location) {
         lines.push(`           at line ${finding.location.line}, column ${finding.location.column}`)
@@ -73,6 +87,15 @@ export function renderSummary(result: AuditResult): string {
         `  ${error.code}${error.ruleId ? ` (${error.ruleId})` : ''}: ${sanitizeForTerminal(error.message)}`,
       )
     }
+  }
+
+  if (gate && gate.excluded > 0) {
+    lines.push(
+      '',
+      `gate: ${gate.excluded} failed finding${
+        gate.excluded === 1 ? '' : 's'
+      } below --min-confidence ${gate.minConfidence} were not counted`,
+    )
   }
 
   lines.push('', 'Limitations:')
