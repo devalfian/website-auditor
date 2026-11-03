@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parseHtml } from '../src/collection/parse.js'
+import { detectRendering } from '../src/collection/rendering.js'
 import type { FetchOutcome } from '../src/collection/fetch.js'
 import { audit } from '../src/engine/audit.js'
 import type { AuditResult } from '../src/contracts/types.js'
@@ -17,6 +18,7 @@ const ALL_SECURITY_HEADERS = {
 
 async function auditFixture(name: string, headers: Record<string, string>): Promise<AuditResult> {
   const html = await readFile(join(FIXTURES, name), 'utf8')
+  const document = parseHtml(html)
   const snapshot = {
     requestedUrl: `https://example.com/${name}`,
     finalUrl: `https://example.com/${name}`,
@@ -24,7 +26,8 @@ async function auditFixture(name: string, headers: Record<string, string>): Prom
     headers: { headers, cookieNames: [] },
     redirectChain: [],
     html,
-    document: parseHtml(html),
+    document,
+    rendering: detectRendering(document, html),
     truncated: false,
   }
   return audit({
@@ -54,6 +57,15 @@ describe('fixtures', () => {
     expect(statusOf(result, 'security/security-headers')).toBe('failed')
     expect(statusOf(result, 'security/https')).toBe('passed')
     expect(statusOf(result, 'technical/http-status')).toBe('passed')
+  })
+
+  it('neither fixture looks client-rendered', async () => {
+    for (const name of ['index.html', 'clean.html']) {
+      const html = await readFile(join(FIXTURES, name), 'utf8')
+      const assessment = detectRendering(parseHtml(html), html)
+      expect(assessment.kind, name).toBe('server-rendered')
+      expect(assessment.evidence, name).toEqual([])
+    }
   })
 
   it('clean.html produces no findings at all', async () => {

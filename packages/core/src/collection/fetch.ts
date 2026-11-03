@@ -2,6 +2,7 @@ import { Agent, request } from 'undici'
 import { isIP } from 'node:net'
 import { createGuardedLookup, isBlockedAddress } from './ip-guard.js'
 import { parseHtml } from './parse.js'
+import { detectRendering } from './rendering.js'
 import { VERSION } from '../version.js'
 import type { AuditError, AuditSnapshot, HeadersSummary } from '../contracts/types.js'
 
@@ -286,6 +287,8 @@ export async function fetchPage(rawUrl: string, options: FetchOptions = {}): Pro
         }
       }
 
+      const document = parseHtml(body.text)
+
       return {
         ok: true,
         snapshot: {
@@ -295,7 +298,8 @@ export async function fetchPage(rawUrl: string, options: FetchOptions = {}): Pro
           headers: summarizeHeaders(response.headers),
           redirectChain,
           html: body.text,
-          document: parseHtml(body.text),
+          document,
+          rendering: detectRendering(document, body.text),
           // v1 aborts oversize responses instead of cutting them, so this is always
           // false today. The field exists so a future soft-limit mode needs no schema change.
           truncated: false,

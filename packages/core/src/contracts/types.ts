@@ -105,6 +105,8 @@ export interface AuditSnapshot {
   redirectChain: string[]
   html: string
   document: HtmlDocument
+  /** Whether the served HTML is a faithful representation of what a user sees. */
+  rendering: RenderingAssessment
   /** true when the response body exceeded the size limit and was cut. */
   truncated: boolean
 }
