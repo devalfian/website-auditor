@@ -47,12 +47,7 @@ export type Category = 'seo' | 'technical' | 'security' | 'accessibility'
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
 export type Confidence = 'high' | 'medium' | 'low'
 export type RuleStatus =
-  | 'passed'
-  | 'failed'
-  | 'needs-review'
-  | 'not-applicable'
-  | 'unobservable'
-  | 'error'
+  'passed' | 'failed' | 'needs-review' | 'not-applicable' | 'unobservable' | 'error'
 
 /**
  * Statuses a rule may return. 'unobservable' is excluded because it describes the
@@ -194,6 +189,8 @@ export interface AuditResult {
   errors: AuditError[]
   environment: { pagescopeVersion: string; node: string }
   limitations: string[]
+  /** What this audit inspected, and what it deliberately did not. */
+  coverage: AuditCoverage
   /** Present only when a baseline file was applied to this audit. */
   baseline?: {
     newFindings: number

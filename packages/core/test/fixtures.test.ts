@@ -57,6 +57,8 @@ describe('fixtures', () => {
     expect(statusOf(result, 'security/security-headers')).toBe('failed')
     expect(statusOf(result, 'security/https')).toBe('passed')
     expect(statusOf(result, 'technical/http-status')).toBe('passed')
+    expect(result.coverage.rendering).toBe('server-rendered')
+    expect(result.coverage.unobservableRules).toEqual([])
   })
 
   it('neither fixture looks client-rendered', async () => {

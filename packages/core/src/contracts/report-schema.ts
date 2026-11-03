@@ -70,6 +70,17 @@ const auditErrorSchema = z.object({
   ruleId: z.string().optional(),
 })
 
+const coverageSchema = z.object({
+  representation: z.enum(['served-html', 'rendered-dom']),
+  rendering: z.enum(['server-rendered', 'client-rendered']),
+  renderingEvidence: z.array(evidenceSchema),
+  rulesEvaluated: z.number().int().nonnegative(),
+  unobservableRules: z.array(z.string()),
+  notInspected: z.array(
+    z.enum(['rendered-dom', 'linked-pages', 'wcag-conformance', 'exploitability']),
+  ),
+})
+
 export const auditResultSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   audit: z.object({
@@ -103,6 +114,7 @@ export const auditResultSchema = z.object({
   findings: z.array(findingSchema),
   errors: z.array(auditErrorSchema),
   environment: z.object({ pagescopeVersion: z.string(), node: z.string() }),
+  coverage: coverageSchema,
   limitations: z.array(z.string()),
   baseline: z
     .object({

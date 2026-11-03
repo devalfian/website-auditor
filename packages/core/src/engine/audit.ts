@@ -3,22 +3,27 @@ import { SCHEMA_VERSION } from '../contracts/report-schema.js'
 import { VERSION } from '../version.js'
 import { applyBaseline, type BaselineFile } from './baseline.js'
 import { fingerprintOf } from './fingerprint.js'
+import { limitationsFor } from './limits.js'
 import { selectRules } from './registry.js'
 import type {
+  AuditCoverage,
   AuditError,
   AuditResult,
   AuditSnapshot,
   Finding,
   FindingStatus,
+  NotInspected,
   RuleDefinition,
   RuleExecutionSummary,
   RuleResult,
 } from '../contracts/types.js'
 
-export const LIMITATIONS: readonly string[] = [
-  'JavaScript is not executed: only the raw HTML response is inspected.',
-  'Only the single requested page is audited; links are not crawled.',
-  'Automated checks cannot establish WCAG conformance or prove that a page is exploitable.',
+/** Spec C reads served HTML only. Each later phase removes one entry. */
+const NOT_INSPECTED: NotInspected[] = [
+  'rendered-dom',
+  'linked-pages',
+  'wcag-conformance',
+  'exploitability',
 ]
 
 export interface AuditRequest {
@@ -68,22 +73,34 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
     error: AuditError,
     finalUrl: string | null,
     redirectChain: string[],
-  ): AuditResult => ({
-    schemaVersion: SCHEMA_VERSION,
-    audit: finished(),
-    target: { requestedUrl: request.url, finalUrl, httpStatus: null, redirectChain },
-    status: 'failed',
-    rules: rules.map((rule): RuleExecutionSummary => ({
-      ruleId: rule.id,
-      status: 'error',
-      findingCount: 0,
-      error,
-    })),
-    findings: [],
-    errors: [error],
-    environment: { pagescopeVersion: VERSION, node: process.versions.node },
-    limitations: [...LIMITATIONS],
-  })
+  ): AuditResult => {
+    const coverage: AuditCoverage = {
+      representation: 'served-html',
+      rendering: 'server-rendered',
+      renderingEvidence: [],
+      rulesEvaluated: 0,
+      unobservableRules: [],
+      notInspected: [...NOT_INSPECTED],
+    }
+
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      audit: finished(),
+      target: { requestedUrl: request.url, finalUrl, httpStatus: null, redirectChain },
+      status: 'failed',
+      rules: rules.map((rule): RuleExecutionSummary => ({
+        ruleId: rule.id,
+        status: 'error',
+        findingCount: 0,
+        error,
+      })),
+      findings: [],
+      errors: [error],
+      environment: { pagescopeVersion: VERSION, node: process.versions.node },
+      coverage,
+      limitations: limitationsFor(coverage),
+    }
+  }
 
   const fetcher = request.fetcher ?? fetchPage
   const outcome: FetchOutcome = await fetcher(request.url, {
@@ -154,6 +171,19 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
 
   const status = summaries.some((summary) => summary.status === 'error') ? 'partial' : 'completed'
 
+  const coverage: AuditCoverage = {
+    representation: 'served-html',
+    rendering: snapshot.rendering.kind,
+    renderingEvidence: snapshot.rendering.evidence,
+    rulesEvaluated: summaries.filter(
+      (summary) => summary.status !== 'unobservable' && summary.status !== 'error',
+    ).length,
+    unobservableRules: summaries
+      .filter((summary) => summary.status === 'unobservable')
+      .map((summary) => summary.ruleId),
+    notInspected: [...NOT_INSPECTED],
+  }
+
   const result: AuditResult = {
     schemaVersion: SCHEMA_VERSION,
     audit: finished(),
@@ -168,7 +198,8 @@ export async function audit(request: AuditRequest): Promise<AuditResult> {
     findings,
     errors,
     environment: { pagescopeVersion: VERSION, node: process.versions.node },
-    limitations: [...LIMITATIONS],
+    coverage,
+    limitations: limitationsFor(coverage),
   }
 
   return request.baseline ? applyBaseline(result, request.baseline) : result

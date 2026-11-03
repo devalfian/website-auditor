@@ -120,6 +120,30 @@ export function toMarkdownReport(result: AuditResult): string {
     for (const finding of ordered) lines.push(findingBlock(finding), '')
   }
 
+  lines.push('## Coverage', '')
+  lines.push(`- Representation: ${result.coverage.representation}`)
+  lines.push(`- Rendering: ${result.coverage.rendering}`)
+  lines.push(`- Rules evaluated: ${result.coverage.rulesEvaluated}`)
+  lines.push(
+    `- Unobservable rules: ${
+      result.coverage.unobservableRules.length > 0
+        ? result.coverage.unobservableRules.join(', ')
+        : 'none'
+    }`,
+  )
+  lines.push(
+    `- Not inspected: ${
+      result.coverage.notInspected.length > 0 ? result.coverage.notInspected.join(', ') : 'nothing'
+    }`,
+  )
+  lines.push('')
+  if (result.coverage.renderingEvidence.length > 0) {
+    lines.push('### Rendering evidence', '')
+    for (const evidence of result.coverage.renderingEvidence) {
+      lines.push(evidenceBlock(evidence), '')
+    }
+  }
+
   lines.push('## Limitations', '')
   for (const limitation of result.limitations) lines.push(`- ${sanitizeForTerminal(limitation)}`)
   lines.push('')

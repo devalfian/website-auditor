@@ -9,8 +9,7 @@ import type { Evidence, HtmlDocument, RenderingAssessment } from '../contracts/t
 const ROOT_IDS = new Set(['root', 'app', '__next', '__nuxt', '___gatsby'])
 const ROOT_TAGS = new Set(['app-root'])
 
-const JAVASCRIPT_DEMAND =
-  /enable javascript|requires javascript|javascript is (disabled|required)/i
+const JAVASCRIPT_DEMAND = /enable javascript|requires javascript|javascript is (disabled|required)/i
 
 function hasElementChild(el: HtmlElement): boolean {
   return (el.childNodes ?? []).some(

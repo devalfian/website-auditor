@@ -19,6 +19,14 @@ const minimal: AuditResult = {
   rules: [{ ruleId: 'seo/title', status: 'passed', findingCount: 0 }],
   findings: [],
   errors: [],
+  coverage: {
+    representation: 'served-html',
+    rendering: 'server-rendered',
+    renderingEvidence: [],
+    rulesEvaluated: 1,
+    unobservableRules: [],
+    notInspected: ['rendered-dom', 'linked-pages', 'wcag-conformance', 'exploitability'],
+  },
   environment: { pagescopeVersion: '0.0.0', node: process.versions.node },
   limitations: ['JavaScript is not executed; only the raw HTML response is inspected.'],
 }
@@ -98,5 +106,10 @@ describe('auditResultSchema', () => {
       ],
     }
     expect(() => auditResultSchema.parse(withoutProvenance)).toThrow()
+  })
+
+  it('rejects a report without coverage', () => {
+    const { coverage: _dropped, ...rest } = minimal
+    expect(() => auditResultSchema.parse(rest)).toThrow()
   })
 })

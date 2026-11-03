@@ -93,6 +93,22 @@ export function toHtmlReport(result: AuditResult): string {
     .map((item) => `<li>${escapeHtml(sanitizeForTerminal(item))}</li>`)
     .join('')
 
+  const coverage = `<h2>Coverage</h2>
+<ul>
+<li>Representation: <code>${escapeHtml(result.coverage.representation)}</code></li>
+<li>Rendering: <code>${escapeHtml(result.coverage.rendering)}</code></li>
+<li>Rules evaluated: ${result.coverage.rulesEvaluated}</li>
+<li>Unobservable rules: ${
+    result.coverage.unobservableRules.map((id) => `<code>${escapeHtml(id)}</code>`).join(', ') ||
+    'none'
+  }</li>
+<li>Not inspected: ${
+    result.coverage.notInspected.map((item) => `<code>${escapeHtml(item)}</code>`).join(', ') ||
+    'nothing'
+  }</li>
+</ul>
+${result.coverage.renderingEvidence.map(evidenceHtml).join('\n')}`
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -115,6 +131,7 @@ ${errors}
 <h2>Findings (${result.findings.length})</h2>
 ${findings || '<p>No findings.</p>'}
 <footer>
+${coverage}
 <h2>Limitations</h2>
 <ul>${limitations}</ul>
 </footer>

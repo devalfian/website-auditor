@@ -69,6 +69,22 @@ const result: AuditResult = {
     },
   ],
   errors: [{ code: 'RULE_CRASH', message: 'boom', ruleId: 'security/https' }],
+  coverage: {
+    representation: 'served-html',
+    rendering: 'client-rendered',
+    renderingEvidence: [
+      {
+        kind: 'html-snippet',
+        snippet: `<div id="root">${hostileTitle}</div>`,
+        line: 9,
+        column: 3,
+        truncated: false,
+      },
+    ],
+    rulesEvaluated: 3,
+    unobservableRules: ['a11y/img-alt'],
+    notInspected: ['rendered-dom', 'linked-pages', 'wcag-conformance', 'exploitability'],
+  },
   environment: { pagescopeVersion: '0.0.0', node: process.versions.node },
   limitations: ['JavaScript is not executed.'],
 }
@@ -90,6 +106,20 @@ describe('toJsonReport', () => {
     const json = toJsonReport(result)
     expect(json.endsWith('\n')).toBe(true)
     expect(() => auditResultSchema.parse(JSON.parse(json))).not.toThrow()
+  })
+})
+
+describe('coverage reporting', () => {
+  it('prints a coverage section in all three formats', () => {
+    expect(toMarkdownReport(result)).toContain('## Coverage')
+    expect(toHtmlReport(result)).toContain('<h2>Coverage</h2>')
+    expect(JSON.parse(toJsonReport(result)).coverage.unobservableRules).toEqual(['a11y/img-alt'])
+  })
+
+  it('escapes rendering evidence, which comes from the audited page', () => {
+    expect(toHtmlReport(result)).not.toContain('<script')
+    expect(toHtmlReport(result)).toContain('&lt;script&gt;')
+    expect(toMarkdownReport(result)).toContain('### Rendering evidence')
   })
 })
 

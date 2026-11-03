@@ -60,6 +60,16 @@ const baseResult = (overrides: Partial<AuditResult> = {}): AuditResult => ({
   errors: [],
   environment: { pagescopeVersion: '0.0.0', node: process.versions.node },
   limitations: ['JavaScript is not executed.'],
+  coverage: {
+    representation: 'served-html' as const,
+    rendering: 'server-rendered' as const,
+    renderingEvidence: [],
+    rulesEvaluated: 1,
+    unobservableRules: [],
+    notInspected: ['rendered-dom', 'linked-pages', 'wcag-conformance', 'exploitability'] as (
+      'rendered-dom' | 'linked-pages' | 'wcag-conformance' | 'exploitability'
+    )[],
+  },
   ...overrides,
 })
 

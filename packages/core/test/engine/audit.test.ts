@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { LIMITATIONS, audit } from '../../src/engine/audit.js'
+import { audit } from '../../src/engine/audit.js'
+import { limitationsFor } from '../../src/engine/limits.js'
 import { UnknownRuleError, allRules, selectRules } from '../../src/engine/registry.js'
 import { SCHEMA_VERSION } from '../../src/contracts/report-schema.js'
 import type { FetchOutcome } from '../../src/collection/fetch.js'
@@ -51,7 +52,9 @@ describe('audit', () => {
     expect(result.status).toBe('completed')
     expect(result.rules).toHaveLength(13)
     expect(result.schemaVersion).toBe(SCHEMA_VERSION)
-    expect(result.limitations).toEqual([...LIMITATIONS])
+    expect(result.limitations).toEqual(limitationsFor(result.coverage))
+    expect(result.coverage.representation).toBe('served-html')
+    expect(result.coverage.notInspected).toContain('linked-pages')
     expect(result.rules.some((summary) => summary.status === 'failed')).toBe(true)
     expect(result.rules.some((summary) => summary.status === 'passed')).toBe(true)
   })
@@ -123,6 +126,24 @@ describe('audit', () => {
     expect(unobservable.length).toBeGreaterThan(0)
     for (const summary of unobservable) expect(summary.findingCount).toBe(0)
     expect(result.errors).toEqual([])
+  })
+
+  it('names the rules it could not observe and explains why in the limitations', async () => {
+    const result = await audit({ url: 'https://example.com/', fetcher: okFetcher(clientRendered) })
+    expect(result.coverage.rendering).toBe('client-rendered')
+    expect([...result.coverage.unobservableRules].sort()).toEqual([
+      'a11y/img-alt',
+      'seo/heading-structure',
+    ])
+    expect(result.coverage.renderingEvidence).toHaveLength(1)
+    expect(result.limitations.join(' ')).toContain('rendered client-side')
+  })
+
+  it('reports coverage even when the page could not be fetched', async () => {
+    const result = await audit({ url: 'https://example.com/', fetcher: failingFetcher() })
+    expect(result.coverage.rulesEvaluated).toBe(0)
+    expect(result.coverage.unobservableRules).toEqual([])
+    expect(result.limitations.length).toBeGreaterThan(0)
   })
 
   it('records findings with rule metadata attached', async () => {
