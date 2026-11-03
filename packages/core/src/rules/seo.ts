@@ -9,6 +9,7 @@ export const titleRule: RuleDefinition = {
   title: 'Page declares a non-empty <title>',
   description: 'Checks that <head> contains a <title> element with non-empty text.',
   docsSlug: 'seo-title',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const head = getHead(snapshot.document)
@@ -75,6 +76,7 @@ export const metaDescriptionRule: RuleDefinition = {
   title: 'Page declares a non-empty meta description',
   description: 'Checks for <meta name="description"> with non-empty content inside <head>.',
   docsSlug: 'seo-meta-description',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const meta = findMeta(snapshot, 'name', 'description')
@@ -172,6 +174,7 @@ export const canonicalRule: RuleDefinition = {
   title: 'Page declares an absolute canonical URL',
   description: 'Checks for <link rel="canonical"> with an absolute href inside <head>.',
   docsSlug: 'seo-canonical',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const link = canonicalLink(snapshot)
@@ -264,6 +267,7 @@ export const robotsMetaRule: RuleDefinition = {
   description:
     'Inspects <meta name="robots"> and reports index/follow blocking directives for human review.',
   docsSlug: 'seo-robots-meta',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const meta = findMeta(snapshot, 'name', 'robots')
@@ -310,6 +314,7 @@ export const openGraphRule: RuleDefinition = {
   title: 'Page declares the core Open Graph properties',
   description: 'Checks for og:title, og:description, og:image and og:url meta properties.',
   docsSlug: 'seo-open-graph',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const missing = OG_PROPERTIES.filter(
@@ -354,6 +359,7 @@ export const headingStructureRule: RuleDefinition = {
   title: 'Heading order is unambiguous',
   description: 'Counts <h1> elements and reports heading levels that skip a level.',
   docsSlug: 'seo-heading-structure',
+  observation: 'rendered-dom',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const headings = findAll(snapshot.document, (el) => /^h[1-6]$/.test(el.tagName))

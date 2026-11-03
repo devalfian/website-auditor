@@ -16,6 +16,14 @@ export interface RenderingAssessment {
   evidence: Evidence[]
 }
 
+/**
+ * The minimum representation a rule needs to reach a conclusion.
+ * 'served-html'  — the bytes the server sent are enough
+ * 'rendered-dom' — needs the DOM after JavaScript has run
+ * 'http-headers' — reads only the status line and response headers
+ */
+export type ObservationSource = 'served-html' | 'rendered-dom' | 'http-headers'
+
 export type Category = 'seo' | 'technical' | 'security' | 'accessibility'
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
 export type Confidence = 'high' | 'medium' | 'low'
@@ -107,6 +115,8 @@ export interface RuleDefinition {
   title: string
   description: string
   docsSlug: string
+  /** The minimum representation this rule needs; see ObservationSource. */
+  observation: ObservationSource
   appliesTo: (snapshot: AuditSnapshot) => boolean
   evaluate: (snapshot: AuditSnapshot) => RuleResult
 }

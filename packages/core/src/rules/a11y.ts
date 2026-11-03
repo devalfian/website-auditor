@@ -8,6 +8,7 @@ export const imgAltRule: RuleDefinition = {
   title: 'Images declare an alt attribute',
   description: 'Reports <img> elements that have no alt attribute at all.',
   docsSlug: 'a11y-img-alt',
+  observation: 'rendered-dom',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const images = findAll(snapshot.document, (el) => el.tagName === 'img')
@@ -56,6 +57,7 @@ export const htmlLangRule: RuleDefinition = {
   title: 'Document declares a language',
   description: 'Checks that the <html> element has a non-empty lang attribute.',
   docsSlug: 'a11y-html-lang',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const html = findAll(snapshot.document, (el) => el.tagName === 'html')[0]

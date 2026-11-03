@@ -6,6 +6,7 @@ export const httpsRule: RuleDefinition = {
   title: 'Page is served over HTTPS',
   description: 'Checks the scheme of the final URL after redirects.',
   docsSlug: 'security-https',
+  observation: 'http-headers',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     if (snapshot.finalUrl.startsWith('https:')) {
@@ -56,6 +57,7 @@ export const securityHeadersRule: RuleDefinition = {
   description:
     'Reports which of HSTS, CSP, X-Content-Type-Options and Referrer-Policy are absent from the response.',
   docsSlug: 'security-headers',
+  observation: 'http-headers',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const missing = EXPECTED_HEADERS.filter(

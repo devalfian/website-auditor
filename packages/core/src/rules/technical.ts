@@ -8,6 +8,7 @@ export const duplicateIdRule: RuleDefinition = {
   title: 'No duplicate id attributes',
   description: 'Reports id values that more than one element uses.',
   docsSlug: 'technical-duplicate-id',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const byId = new Map<string, HtmlElement[]>()
@@ -63,6 +64,7 @@ export const metaViewportRule: RuleDefinition = {
   title: 'Page declares a viewport meta tag',
   description: 'Checks for <meta name="viewport"> in the document.',
   docsSlug: 'technical-meta-viewport',
+  observation: 'served-html',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const hasViewport =
@@ -111,6 +113,7 @@ export const httpStatusRule: RuleDefinition = {
   title: 'Page responds with a 2xx status',
   description: 'Reports a final response status outside the 2xx range.',
   docsSlug: 'technical-http-status',
+  observation: 'http-headers',
   appliesTo: () => true,
   evaluate: (snapshot) => {
     const status = snapshot.httpStatus
