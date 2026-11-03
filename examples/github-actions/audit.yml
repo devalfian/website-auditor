@@ -24,7 +24,7 @@ jobs:
 
       - name: Run PageScope
         run: >
-          npx --yes pagescope@latest audit "${{ inputs.url }}"
+          npx --yes pagescope@latest "${{ inputs.url }}"
           --format markdown
           --out pagescope-report.md
           --fail-on "${{ inputs.fail-on }}"
