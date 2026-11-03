@@ -213,9 +213,13 @@ export async function run(argv: string[], deps: CliDeps = {}): Promise<number> {
     )
   }
 
-  const policyFindings = result.baseline
-    ? result.findings.filter((finding) => finding.baseline === 'new')
-    : result.findings
+  // A finding that says "PageScope cannot determine which applies here" is not an
+  // assertion of breakage. Only `failed` findings may fail a build.
+  const policyFindings = (
+    result.baseline
+      ? result.findings.filter((finding) => finding.baseline === 'new')
+      : result.findings
+  ).filter((finding) => finding.status === 'failed')
 
   const policyFailed =
     failOn !== 'none' &&

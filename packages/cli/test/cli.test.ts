@@ -78,6 +78,23 @@ const highFinding = {
   fingerprint: 'aaaaaaaaaaaaaaaa',
 }
 
+const needsReviewFinding = {
+  ruleId: 'seo/robots-meta',
+  category: 'seo' as const,
+  status: 'needs-review' as const,
+  severity: 'medium' as const,
+  confidence: 'medium' as const,
+  title: 'Robots meta contains "noindex"',
+  description: 'PageScope cannot determine whether this directive is intentional.',
+  target: { url: 'https://example.com/' },
+  evidence: [
+    { kind: 'absence' as const, expected: 'blocking robots directives', scope: 'scanned <head>' },
+  ],
+  recommendation: 'Confirm the directive is intentional.',
+  docsUrl: 'https://example.com/docs/rules/seo-robots-meta.md',
+  fingerprint: 'bbbbbbbbbbbbbbbb',
+}
+
 const captured: string[] = []
 const sink = {
   write: (text: string) => captured.push(text),
@@ -139,6 +156,23 @@ describe('run() with an injected audit', () => {
       out: sink,
     })
     expect(code).toBe(EXIT.OK)
+  })
+
+  it('does not fail the gate on a needs-review finding', async () => {
+    const code = await run(['https://example.com/', '--fail-on', 'medium'], {
+      auditFn: async () => baseResult({ findings: [needsReviewFinding] }),
+      out: sink,
+    })
+    expect(code).toBe(EXIT.OK)
+  })
+
+  it('still fails the gate on a failed finding at the same severity', async () => {
+    const failed = { ...needsReviewFinding, status: 'failed' as const }
+    const code = await run(['https://example.com/', '--fail-on', 'medium'], {
+      auditFn: async () => baseResult({ findings: [failed] }),
+      out: sink,
+    })
+    expect(code).toBe(EXIT.POLICY)
   })
 
   it('returns 3 when the audit itself failed', async () => {
