@@ -24,6 +24,25 @@ export interface RenderingAssessment {
  */
 export type ObservationSource = 'served-html' | 'rendered-dom' | 'http-headers'
 
+/**
+ * What an audit deliberately did not inspect. Machine-readable on purpose: a future
+ * phase removes one entry and the matching limitation sentence disappears.
+ */
+export type NotInspected = 'rendered-dom' | 'linked-pages' | 'wcag-conformance' | 'exploitability'
+
+export interface AuditCoverage {
+  /** The representation that was actually read. */
+  representation: 'served-html' | 'rendered-dom'
+  /** Judgement about whether that representation is faithful to what a user sees. */
+  rendering: RenderingKind
+  /** Evidence behind the rendering judgement. Empty when nothing fired. */
+  renderingEvidence: Evidence[]
+  rulesEvaluated: number
+  /** Rule ids the engine refused to conclude from this representation. */
+  unobservableRules: string[]
+  notInspected: NotInspected[]
+}
+
 export type Category = 'seo' | 'technical' | 'security' | 'accessibility'
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
 export type Confidence = 'high' | 'medium' | 'low'
